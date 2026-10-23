@@ -31,6 +31,8 @@
       --ud: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
       --ud-mincho: "BIZ UDPMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Yu Mincho", serif;
       --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --joy: 136px;             /* ジョイスティックの直径 */
+      --joy-gap: 20px;          /* 画面端からの余白 */
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -208,19 +210,52 @@
       color: #fff; background: rgba(0, 0, 0, .5); padding: .3rem .5rem; border-radius: 4px;
       white-space: pre;
     }
-    #hud .bottom-bar {
-      position: absolute; bottom: env(safe-area-inset-bottom, 0); left: 0; right: 0;
-      padding: .7rem 1rem; display: flex; gap: .6rem;
-      justify-content: space-between; align-items: flex-end;
+    /* 移動用ジョイスティック：大きい円＝台座、小さい円＝つまみ、中央の点 */
+    #joystick {
+      position: absolute; pointer-events: auto; touch-action: none;
+      left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap));
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap));
+      width: var(--joy); height: var(--joy); border-radius: 50%;
+      background: rgba(247, 246, 242, .7);
+      border: 1.5px solid #4a4a4c;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      cursor: grab; transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #joystick.active { background: rgba(247, 246, 242, .82); cursor: grabbing; }
+    #joystick-knob {
+      position: absolute; left: 50%; top: 50%;
+      width: 33%; height: 33%; border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: #fafaf9;
+      border: 1.5px solid #4a4a4c;
+      transition: transform .18s ease-out;
+      pointer-events: none;
+    }
+    #joystick.active #joystick-knob { transition: none; }
+    #joystick-knob::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      width: 19%; height: 19%; border-radius: 50%;
+      transform: translate(-50%, -50%); background: #1d1d1f;
     }
     #move-hint {
-      font-family: var(--ud); font-size: .8rem; line-height: 1.4;
-      color: #fff; background: rgba(28, 42, 80, .74);
-      padding: .45rem .9rem; border-radius: 999px;
+      position: absolute;
+      left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap) + var(--joy) + 12px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + var(--joy) / 2);
+      transform: translateY(50%);
+      max-width: min(15rem, calc(100% - var(--joy) - 60px));
+      font-family: var(--ud); font-size: .8rem; line-height: 1.5;
+      color: #fff; background: rgba(28, 42, 80, .78);
+      padding: .45rem .85rem; border-radius: 12px;
       -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      transition: opacity .6s ease;
     }
+    #move-hint.faded { opacity: 0; }
     #reset-btn {
-      pointer-events: auto; flex: none;
+      position: absolute; pointer-events: auto;
+      right: calc(env(safe-area-inset-right, 0px) + 1rem);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap));
       font-family: var(--ud); font-weight: 700; font-size: .8rem;
       color: var(--ai-deep); background: rgba(244, 239, 227, .94);
       border: none; padding: .55rem 1rem; border-radius: 999px; cursor: pointer;
@@ -236,7 +271,7 @@
     /* ===== 解説（黒地に白抜き文字・UDフォント） ===== */
     #kaisetsu {
       position: fixed; left: 50%; z-index: 30;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 4.4rem);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + var(--joy) + 14px);
       width: min(36rem, calc(100% - 24px));
       transform: translate(-50%, 14px);
       background: rgba(0, 0, 0, .88); color: #fff;
@@ -270,6 +305,22 @@
       pointer-events: auto; -webkit-tap-highlight-color: transparent;
     }
     #kaisetsu-close:hover, #kaisetsu-close:focus-visible { background: rgba(255, 255, 255, .16); outline: none; }
+
+    /* 横幅に余裕がある画面：解説は下端中央（ジョイスティックと重ならない） */
+    @media (min-width: 920px) {
+      #kaisetsu { bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem); }
+    }
+    /* スマホ横向き：ジョイスティックを小さくし、解説はその右に置く */
+    @media (orientation: landscape) and (max-height: 520px) and (max-width: 919px) {
+      :root { --joy: 112px; --joy-gap: 14px; }
+      #kaisetsu {
+        left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap) + var(--joy) + 14px);
+        width: calc(100% - var(--joy-gap) - var(--joy) - 40px); max-width: 36rem;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + 3rem);
+        transform: translateY(14px);
+      }
+      #kaisetsu.visible { transform: translateY(0); }
+    }
 
     @media (prefers-reduced-motion: reduce) {
       #start, #kaisetsu, #kaisetsu.visible { transition: none; }
@@ -311,10 +362,9 @@
       <span class="stats hidden" id="stats">--</span>
     </div>
     <div id="crosshair"></div>
-    <div class="bottom-bar">
-      <span id="move-hint">画面を長押しすると前に進みます</span>
-      <button id="reset-btn" type="button">はじめの位置へ</button>
-    </div>
+    <div id="joystick" role="application" aria-label="移動（中の円を動かした方向に歩く）"><div id="joystick-knob"></div></div>
+    <span id="move-hint">中の円を動かすと歩けます</span>
+    <button id="reset-btn" type="button">はじめの位置へ</button>
   </div>
 
   <!-- 建物の解説 -->
@@ -679,6 +729,7 @@
       panelBody.textContent = z.body;
       panelBody.scrollTop = 0;
       panel.classList.add('visible');
+      hintEl.classList.add('faded');
       // 長文で枠からあふれる時だけ指でスクロールできるようにする（それ以外は下の画面の長押し移動を妨げない）
       panel.classList.toggle('scrollable', panelBody.scrollHeight > panelBody.clientHeight + 1);
     }
@@ -760,30 +811,71 @@
 
     // ===== 操作 =====
     const input = {
-      forward: false,
       kbd: { w: false, a: false, s: false, d: false },
-      mouseDrag: { active: false, lastX: 0, lastY: 0, yaw: 0, pitch: 0 },
+      mouseDrag: { yaw: 0, pitch: 0 },                 // ジャイロがない時の向き
+      joy: { id: null, x: 0, y: 0, mag: 0 },           // ジョイスティック（-1〜1、画面下向きが+y）
     };
-    canvas.addEventListener('touchstart', (e) => { input.forward = true; e.preventDefault(); }, { passive: false });
-    canvas.addEventListener('touchend',   () => { input.forward = false; });
-    canvas.addEventListener('touchcancel',() => { input.forward = false; });
+    const JOY_DEADZONE = 0.12;   // 中心付近の遊び
+    const hintEl = document.getElementById('move-hint');
+    const fadeHint = () => hintEl.classList.add('faded');
+
     const KEYMAP = { w: 'w', ArrowUp: 'w', a: 'a', ArrowLeft: 'a', s: 's', ArrowDown: 's', d: 'd', ArrowRight: 'd' };
-    window.addEventListener('keydown', (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) input.kbd[k] = true; });
+    window.addEventListener('keydown', (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) { input.kbd[k] = true; if (started) fadeHint(); } });
     window.addEventListener('keyup',   (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) input.kbd[k] = false; });
-    canvas.addEventListener('mousedown', (e) => {
-      input.mouseDrag.active = true;
-      input.mouseDrag.lastX = e.clientX; input.mouseDrag.lastY = e.clientY;
+
+    // 画面のドラッグで見回し（マウス・指とも。ジャイロ使用中は左右の向きだけ足す）
+    const look = { id: null, lastX: 0, lastY: 0 };
+    canvas.addEventListener('pointerdown', (e) => {
+      if (look.id !== null) return;
+      look.id = e.pointerId; look.lastX = e.clientX; look.lastY = e.clientY;
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     });
-    window.addEventListener('mouseup', () => { input.mouseDrag.active = false; });
-    window.addEventListener('mousemove', (e) => {
-      if (!input.mouseDrag.active) return;
-      const dx = e.clientX - input.mouseDrag.lastX;
-      const dy = e.clientY - input.mouseDrag.lastY;
-      input.mouseDrag.yaw   -= dx * 0.003;
-      input.mouseDrag.pitch -= dy * 0.003;
-      input.mouseDrag.pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, input.mouseDrag.pitch));
-      input.mouseDrag.lastX = e.clientX; input.mouseDrag.lastY = e.clientY;
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== look.id) return;
+      const dx = e.clientX - look.lastX, dy = e.clientY - look.lastY;
+      look.lastX = e.clientX; look.lastY = e.clientY;
+      if (deviceState.enabled && deviceState.alpha !== null) {
+        deviceState.yawOffset -= dx * 0.003;
+      } else {
+        input.mouseDrag.yaw -= dx * 0.003;
+        input.mouseDrag.pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, input.mouseDrag.pitch - dy * 0.003));
+      }
     });
+    const lookEnd = (e) => { if (e.pointerId === look.id) look.id = null; };
+    canvas.addEventListener('pointerup', lookEnd);
+    canvas.addEventListener('pointercancel', lookEnd);
+
+    // ジョイスティック：つまみを動かした方向へ、動かした量に応じた速さで歩く
+    const joyBase = document.getElementById('joystick');
+    const joyKnob = document.getElementById('joystick-knob');
+    function joyMove(e) {
+      const r = joyBase.getBoundingClientRect();
+      const maxR = (r.width - joyKnob.offsetWidth) / 2;
+      let dx = e.clientX - (r.left + r.width / 2);
+      let dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy);
+      if (d > maxR) { dx *= maxR / d; dy *= maxR / d; }
+      joyKnob.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+      input.joy.x = dx / maxR; input.joy.y = dy / maxR; input.joy.mag = Math.min(1, d / maxR);
+    }
+    function joyEnd(e) {
+      if (e.pointerId !== input.joy.id) return;
+      input.joy.id = null; input.joy.x = input.joy.y = input.joy.mag = 0;
+      joyKnob.style.transform = '';
+      joyBase.classList.remove('active');
+    }
+    joyBase.addEventListener('pointerdown', (e) => {
+      if (input.joy.id !== null) return;
+      input.joy.id = e.pointerId;
+      try { joyBase.setPointerCapture(e.pointerId); } catch (_) {}
+      joyBase.classList.add('active');
+      joyMove(e); fadeHint();
+      e.preventDefault();
+    });
+    joyBase.addEventListener('pointermove', (e) => { if (e.pointerId === input.joy.id) joyMove(e); });
+    joyBase.addEventListener('pointerup', joyEnd);
+    joyBase.addEventListener('pointercancel', joyEnd);
+    joyBase.addEventListener('lostpointercapture', joyEnd);
 
     // ===== 毎フレームの処理 =====
     const clock = new THREE.Clock();
@@ -805,15 +897,20 @@
       _move.set(0, 0, 0);
       _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion); _fwd.y = 0; _fwd.normalize();
       _rgt.set(1, 0, 0).applyQuaternion(camera.quaternion);  _rgt.y = 0; _rgt.normalize();
-      if (input.forward) _move.add(_fwd);
-      if (input.kbd.w)   _move.add(_fwd);
-      if (input.kbd.s)   _move.sub(_fwd);
-      if (input.kbd.d)   _move.add(_rgt);
-      if (input.kbd.a)   _move.sub(_rgt);
+      if (input.kbd.w) _move.add(_fwd);
+      if (input.kbd.s) _move.sub(_fwd);
+      if (input.kbd.d) _move.add(_rgt);
+      if (input.kbd.a) _move.sub(_rgt);
+      let speed = _move.lengthSq() > 0 ? 1 : 0;
+      const joy = input.joy;
+      if (joy.mag > JOY_DEADZONE) {
+        _move.addScaledVector(_fwd, -joy.y).addScaledVector(_rgt, joy.x);   // 上＝前進、左右＝横歩き
+        speed = Math.max(speed, Math.min(1, (joy.mag - JOY_DEADZONE) / (1 - JOY_DEADZONE)));
+      }
       const footY = camera.position.y - CONFIG.eyeHeight;
 
-      if (_move.lengthSq() > 0) {
-        _move.normalize().multiplyScalar(CONFIG.walkSpeed * dt);
+      if (speed > 0 && _move.lengthSq() > 1e-8) {
+        _move.normalize().multiplyScalar(CONFIG.walkSpeed * speed * dt);
         const curX = camera.position.x;
         const curZ = camera.position.z;
         const newX = curX + _move.x;
@@ -878,9 +975,9 @@
     });
 
     const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-    document.getElementById('move-hint').textContent = isTouch
-      ? '画面を長押しすると前に進みます'
-      : 'ドラッグで見回し／W・A・S・Dキーで移動';
+    hintEl.textContent = isTouch
+      ? '中の円を動かすと歩けます'
+      : '円のドラッグかW・A・S・Dキーで移動／画面のドラッグで見回し';
 
     // ===== スタート =====
     startBtn.addEventListener('click', async () => {
