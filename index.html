@@ -4,163 +4,325 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>遺跡空間ビューワー v0.6</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f4efe3">
+  <title>正道官衙遺跡VR体験</title>
+  <meta name="description" content="奈良時代に役所のあった正道官衙遺跡を歩き回ろう！">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="正道官衙遺跡VR体験">
+  <meta property="og:description" content="奈良時代に役所のあった正道官衙遺跡を歩き回ろう！">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap">
+  <link rel="preload" href="site.glb" as="fetch" crossorigin>
   <style>
+    /* 色はキャラクター（藍の袍・縹の帯・生成りの袴）から取っている */
     :root {
-      --hud-bg: rgba(18, 18, 20, 0.78);
-      --hud-fg: #f4f1ec;
-      --accent: #d8a05a;
-      --line: rgba(255, 255, 255, 0.18);
+      --kinari: #f4efe3;        /* 背景：生成り */
+      --kinari-deep: #e6ddc9;
+      --ai: #2a3d72;            /* 袍の藍 */
+      --ai-deep: #1c2a50;
+      --hanada: #6b8bd6;        /* 帯の縹 */
+      --sumi: #24262f;          /* 文字 */
+      --sumi-soft: #555867;
+      --hakama: #b8b28c;        /* 袴の影色 */
+      --ud: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      --ud-mincho: "BIZ UDPMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Yu Mincho", serif;
       --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      --jp-sans: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-      --jp-serif: "Hiragino Mincho ProN", "Noto Serif JP", serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%; height: 100%; overflow: hidden;
-      background: #000; color: var(--hud-fg);
-      font-family: var(--jp-sans);
+      background: var(--kinari); color: var(--sumi);
+      font-family: var(--ud);
       -webkit-touch-callout: none; -webkit-user-select: none;
       user-select: none; overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
     }
     canvas { display: block; touch-action: none; }
-    #permission-overlay {
-      position: fixed; inset: 0;
-      background: radial-gradient(ellipse at center, #1a1612 0%, #000 80%);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 1.5rem; z-index: 100; padding: 2rem; text-align: center;
+    .hidden { display: none !important; }
+
+    /* ===== スタート画面 ===== */
+    #start {
+      position: fixed; inset: 0; z-index: 100;
+      background:
+        radial-gradient(120% 75% at 70% 30%, #fbf8f1 0%, var(--kinari) 55%, var(--kinari-deep) 100%);
+      padding:
+        max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .45s ease;
     }
-    #permission-overlay h1 {
-      font-family: var(--jp-serif); font-size: 1.5rem; font-weight: 500;
-      letter-spacing: 0.08em; color: var(--accent);
+    #start.leaving { opacity: 0; pointer-events: none; }
+    .start-layout {
+      --fig-h: min(60vh, 560px);
+      --fig-h: min(60svh, 560px);
+      --fig-w: calc(var(--fig-h) * 0.29);      /* 人物画像の縦横比 464:1600 */
+      width: 100%; max-width: 1040px; height: 100%; max-height: 900px;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "title"
+        "figure"
+        "action";
+      row-gap: 14px;
     }
-    #permission-overlay p {
-      font-size: 0.9rem; line-height: 1.7;
-      max-width: 22rem; color: rgba(244, 241, 236, 0.75);
+    .start-title {
+      grid-area: title;
+      font-family: var(--ud-mincho); font-weight: 400;
+      color: var(--ai-deep);
+      line-height: 1.25; letter-spacing: .06em;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(42, 61, 114, .22);
     }
-    #permission-btn {
-      margin-top: 0.5rem; padding: 0.9rem 2.4rem;
-      background: transparent; color: var(--accent);
-      border: 1px solid var(--accent);
-      font-family: var(--jp-sans); font-size: 1rem;
-      letter-spacing: 0.08em; border-radius: 2px; cursor: pointer;
+    .start-title .t-main {
+      display: block;
+      font-size: clamp(2.1rem, 10vw, 3.6rem);
     }
-    #permission-btn:active { background: var(--accent); color: #1a1612; }
-    #permission-overlay .hint {
-      margin-top: 1rem; font-family: var(--mono);
-      font-size: 0.75rem; color: rgba(255,255,255,0.4);
+    .start-title .t-sub {
+      display: inline-block; margin-top: 8px;
+      font-family: var(--ud); font-weight: 700;
+      font-size: clamp(1rem, 4.4vw, 1.35rem); letter-spacing: .18em;
+      color: #fff; background: var(--ai);
+      padding: .22em .7em .22em .88em; border-radius: 6px;
     }
-    #loading-status {
-      margin-top: 1rem; display: flex; flex-direction: column;
-      align-items: center; gap: 0.6rem; min-width: 16rem;
+    /* 吹き出しは人物の頭の左横に置く */
+    .bubble {
+      position: absolute; z-index: 1;
+      right: calc(100% + 14px); top: calc(var(--fig-h) * 0.035);
+      width: min(17rem, calc(100vw - var(--fig-w) - 62px));
+      background: #fff; color: var(--sumi);
+      border: 2px solid var(--ai);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: clamp(1rem, 4.3vw, 1.2rem); line-height: 1.75; font-weight: 700;
+      box-shadow: 0 6px 16px rgba(28, 42, 80, .10);
     }
-    #loading-status.hidden { display: none; }
-    #loading-status .label {
-      font-family: var(--mono); font-size: 0.75rem; color: rgba(255,255,255,0.7);
+    .bubble .ph { display: inline-block; }     /* 文節の途中で改行しない */
+    /* 吹き出しのしっぽ（右＝人物の顔の方へ） */
+    .bubble::before, .bubble::after {
+      content: ""; position: absolute; top: 26px;
+      border-style: solid; border-color: transparent;
     }
-    #loading-status progress {
-      width: 16rem; height: 2px; border: none; background: rgba(255,255,255,0.15);
+    .bubble::before { right: -14px; border-width: 9px 0 9px 14px; border-left-color: var(--ai); }
+    .bubble::after  { right: -10px; border-width: 7px 0 7px 11px; border-left-color: #fff; top: 28px; }
+    .figure {
+      grid-area: figure; align-self: center; justify-self: end;
+      position: relative; width: var(--fig-w); height: var(--fig-h);
+      margin-right: 2%;
     }
-    #loading-status progress::-webkit-progress-bar { background: rgba(255,255,255,0.15); }
-    #loading-status progress::-webkit-progress-value { background: var(--accent); }
-    #loading-status progress::-moz-progress-bar { background: var(--accent); }
-    #loading-status .err { color: #ff8c8c; font-size: 0.75rem; max-width: 22rem; }
+    .figure img {
+      display: block; width: 100%; height: 100%; object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(28, 42, 80, .12));
+    }
+    .figure::after {
+      content: ""; position: absolute; z-index: -1;
+      left: 50%; bottom: -8px; width: 150%; height: 22px;
+      transform: translateX(-50%);
+      background: radial-gradient(closest-side, rgba(36, 38, 47, .20), rgba(36, 38, 47, 0));
+    }
+    .action {
+      grid-area: action;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding-top: 4px;
+    }
+    #start-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+      width: min(100%, 20rem); min-height: 58px;
+      font-family: var(--ud); font-weight: 700; font-size: 1.3rem; letter-spacing: .24em;
+      color: #fff; background: var(--ai);
+      border: none; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 5px 0 var(--ai-deep), 0 10px 18px rgba(28, 42, 80, .25);
+      transition: transform .08s ease, box-shadow .08s ease, background .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #start-btn svg { width: .8em; height: .8em; flex: none; }
+    #start-btn:hover { background: #33498a; }
+    #start-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ai-deep), 0 4px 10px rgba(28, 42, 80, .25); }
+    #start-btn:focus-visible { outline: 3px solid var(--hanada); outline-offset: 4px; }
+    #start-btn:disabled { cursor: progress; background: #4b5b8a; }
+    .loading {
+      width: min(100%, 20rem);
+      display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+      font-size: .8rem; color: var(--sumi-soft); text-align: center;
+      min-height: 2.2em;
+    }
+    .loading .bar {
+      height: 4px; border-radius: 2px; background: rgba(42, 61, 114, .14); overflow: hidden;
+    }
+    .loading .bar span {
+      display: block; height: 100%; width: 0%;
+      background: var(--hanada); transition: width .2s linear;
+    }
+    .loading.done .bar { visibility: hidden; }
+    .loading .err { color: #a1342b; font-weight: 700; }
+
+    /* 横長画面（PC・スマホ横向き）：文字を左、人物を右 */
+    @media (orientation: landscape) and (min-aspect-ratio: 5/4) {
+      .start-layout {
+        --fig-h: min(84vh, 760px);
+        --fig-h: min(84svh, 760px);
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: 1fr auto auto 1.4fr;
+        grid-template-areas:
+          ".      figure"
+          "title  figure"
+          "action figure"
+          ".      figure";
+        column-gap: clamp(16px, 4vw, 48px); row-gap: clamp(14px, 4vh, 36px);
+      }
+      .start-title { justify-self: start; padding-right: 1.5em; }
+      .start-title .t-main { font-size: clamp(2rem, 5.2vw, 4.4rem); }
+      .start-title .t-sub { font-size: clamp(1rem, 1.6vw, 1.5rem); }
+      .figure { margin-right: 0; }
+      .bubble {
+        width: min(23rem, calc(100vw - var(--fig-w) - 120px));
+        font-size: clamp(1rem, .9vw + .5rem, 1.4rem);
+      }
+      #start-btn { font-size: clamp(1.2rem, 1vw + .7rem, 1.45rem); }
+      .action { align-items: flex-start; }
+      .loading { text-align: left; }
+    }
+    /* 背の低い縦長画面 */
+    @media (orientation: portrait) and (max-height: 640px) {
+      .start-layout { --fig-h: 50vh; --fig-h: 50svh; }
+      .start-title .t-main { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+    }
+
+    /* ===== VR中の表示 ===== */
     #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
     #hud .top-bar {
       position: absolute; top: env(safe-area-inset-top, 0); left: 0; right: 0;
-      padding: 0.6rem 1rem; display: flex;
+      padding: .7rem 1rem; display: flex;
       justify-content: space-between; align-items: flex-start;
-      font-family: var(--mono); font-size: 0.7rem; mix-blend-mode: difference;
     }
     #hud .top-bar .title {
-      font-family: var(--jp-serif); font-size: 0.85rem;
-      letter-spacing: 0.12em; color: rgba(255,255,255,0.85);
+      font-family: var(--ud); font-weight: 700; font-size: .9rem; letter-spacing: .06em;
+      color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .65), 0 0 1px rgba(0, 0, 0, .8);
     }
     #hud .top-bar .stats {
-      color: rgba(255,255,255,0.65); text-align: right; line-height: 1.4;
+      font-family: var(--mono); font-size: .7rem; line-height: 1.45; text-align: right;
+      color: #fff; background: rgba(0, 0, 0, .5); padding: .3rem .5rem; border-radius: 4px;
+      white-space: pre;
     }
     #hud .bottom-bar {
       position: absolute; bottom: env(safe-area-inset-bottom, 0); left: 0; right: 0;
-      padding: 0.6rem 1rem; display: flex;
+      padding: .7rem 1rem; display: flex; gap: .6rem;
       justify-content: space-between; align-items: flex-end;
     }
     #move-hint {
-      font-family: var(--jp-sans); font-size: 0.75rem;
-      color: rgba(255,255,255,0.55); background: rgba(0,0,0,0.35);
-      padding: 0.4rem 0.8rem; border-radius: 2px; backdrop-filter: blur(4px);
+      font-family: var(--ud); font-size: .8rem; line-height: 1.4;
+      color: #fff; background: rgba(28, 42, 80, .74);
+      padding: .45rem .9rem; border-radius: 999px;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
     }
     #reset-btn {
-      pointer-events: auto; background: var(--hud-bg); color: var(--hud-fg);
-      border: 1px solid var(--line); padding: 0.5rem 0.9rem;
-      font-family: var(--mono); font-size: 0.7rem;
-      border-radius: 2px; cursor: pointer;
+      pointer-events: auto; flex: none;
+      font-family: var(--ud); font-weight: 700; font-size: .8rem;
+      color: var(--ai-deep); background: rgba(244, 239, 227, .94);
+      border: none; padding: .55rem 1rem; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
     }
     #crosshair {
       position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(255,255,255,0.35); mix-blend-mode: difference;
+      background: rgba(255, 255, 255, .55); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
     }
-    #info-panel {
-      position: fixed; bottom: 4rem; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      max-width: 90%; width: 28rem;
-      padding: 1.2rem 1.4rem; background: var(--hud-bg);
-      border-left: 2px solid var(--accent);
-      backdrop-filter: blur(10px); color: var(--hud-fg);
-      font-family: var(--jp-serif);
-      opacity: 0; transition: opacity 0.5s, transform 0.5s;
-      pointer-events: none; z-index: 20;
+
+    /* ===== 解説（黒地に白抜き文字・UDフォント） ===== */
+    #kaisetsu {
+      position: fixed; left: 50%; z-index: 30;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 4.4rem);
+      width: min(36rem, calc(100% - 24px));
+      transform: translate(-50%, 14px);
+      background: rgba(0, 0, 0, .88); color: #fff;
+      border: 1px solid rgba(255, 255, 255, .22); border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+      padding: .95rem 3.3rem 1.05rem 1.15rem;
+      font-family: var(--ud);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s;
     }
-    #info-panel.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #info-panel .label {
-      display: block; font-family: var(--mono); font-size: 0.65rem;
-      color: var(--accent); letter-spacing: 0.18em; margin-bottom: 0.4rem;
+    #kaisetsu.visible {
+      opacity: 1; visibility: visible; transform: translate(-50%, 0);
+      transition: opacity .25s ease, transform .25s ease;
     }
-    #info-panel .title { font-size: 1.1rem; font-weight: 500; margin-bottom: 0.4rem; }
-    #info-panel .body {
-      font-size: 0.85rem; line-height: 1.7;
-      color: rgba(244,241,236,0.85);
-      white-space: pre-wrap;
+    #kaisetsu.scrollable { pointer-events: auto; }
+    #kaisetsu-title {
+      font-size: 1.3rem; font-weight: 700; letter-spacing: .06em; line-height: 1.4;
+      margin-bottom: .35rem;
     }
-    .hidden { display: none !important; }
+    #kaisetsu-body {
+      font-size: 1.06rem; line-height: 1.85; white-space: pre-wrap;
+      word-break: normal; word-break: auto-phrase; line-break: strict;
+      max-height: 38vh; max-height: 38svh; overflow-y: auto; overscroll-behavior: contain;
+    }
+    #kaisetsu-close {
+      position: absolute; top: 6px; right: 6px;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ud); font-size: 1.75rem; line-height: 1; font-weight: 400;
+      color: #fff; background: transparent; border: none; cursor: pointer;
+      pointer-events: auto; -webkit-tap-highlight-color: transparent;
+    }
+    #kaisetsu-close:hover, #kaisetsu-close:focus-visible { background: rgba(255, 255, 255, .16); outline: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      #start, #kaisetsu, #kaisetsu.visible { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <div id="permission-overlay">
-    <h1>遺跡空間ビューワー</h1>
-    <p>iPhoneを実際の遺跡にかざして、復元された3D空間内を歩き回ります。<br>
-       端末の向きを使うため、モーションセンサーへのアクセス許可をお願いします。</p>
-    <button id="permission-btn">START</button>
-    <div class="hint">画面長押しで前進 / 向きはジャイロで操作<br>(PCはマウスドラッグ + WASD)</div>
-    <div id="loading-status" class="hidden">
-      <div class="label" id="loading-label">読み込み中...</div>
-      <progress id="loading-progress" value="0" max="100"></progress>
-      <div class="err hidden" id="loading-err"></div>
+  <!-- スタート画面 -->
+  <div id="start">
+    <div class="start-layout">
+      <h1 class="start-title">
+        <span class="t-main">正道官衙遺跡</span><span class="t-sub">VR体験</span>
+      </h1>
+      <div class="figure">
+        <p class="bubble" id="description"><span class="ph">奈良時代に</span><span class="ph">役所のあった</span><span class="ph">正道官衙遺跡を</span><span class="ph">歩き回ろう！</span></p>
+        <picture>
+          <source srcset="kanjin.webp" type="image/webp">
+          <img src="kanjin.png" alt="奈良時代の役人の姿をした案内役" width="464" height="1600" decoding="async">
+        </picture>
+      </div>
+      <div class="action">
+        <button id="start-btn" type="button">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.6 L9.4 5 L1 9.4 Z" fill="currentColor"/></svg>
+          <span id="start-label">スタート</span>
+        </button>
+        <div class="loading" id="loading" aria-live="polite">
+          <div class="label" id="loading-label">3Dデータを読み込んでいます</div>
+          <div class="bar"><span id="loading-bar"></span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <canvas id="canvas"></canvas>
 
-  <div id="hud">
+  <div id="hud" class="hidden">
     <div class="top-bar">
-      <span class="title">SITE VIEWER</span>
-      <span class="stats" id="stats">--</span>
+      <span class="title">正道官衙遺跡VR体験</span>
+      <span class="stats hidden" id="stats">--</span>
     </div>
     <div id="crosshair"></div>
     <div class="bottom-bar">
-      <span id="move-hint">画面を長押しで前進</span>
-      <button id="reset-btn">RESET</button>
+      <span id="move-hint">画面を長押しすると前に進みます</span>
+      <button id="reset-btn" type="button">はじめの位置へ</button>
     </div>
   </div>
 
-  <div id="info-panel">
-    <span class="label">EXPLANATION</span>
-    <div class="title" id="info-title"></div>
-    <div class="body" id="info-body"></div>
-  </div>
+  <!-- 建物の解説 -->
+  <section id="kaisetsu" role="region" aria-live="polite" aria-labelledby="kaisetsu-title">
+    <h2 id="kaisetsu-title"></h2>
+    <div id="kaisetsu-body"></div>
+    <button id="kaisetsu-close" type="button" aria-label="解説を閉じる">×</button>
+  </section>
 
   <script type="importmap">
   {
@@ -181,12 +343,26 @@
     import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     import { Sky } from 'three/addons/objects/Sky.js';
 
-    const TRIGGER_TEXTS = {};
-    const TRIGGER_DEFAULT_RADIUS = 2.0;
+    // ===== 設定 =====
+    const MODEL_URL = 'site.glb';
+    const KAISETSU_URL = 'kaisetsu.txt';
+
+    // GLB内の文字オブジェクト（ノード名）→ 3D空間に表示されている文字。
+    // kaisetsu.txt の「建物名」はこの文字で書く（ノード名の choya 等でも可）。
+    // Blenderで文字オブジェクトにカスタムプロパティ label を付けて
+    // 書き出した場合はそちらが優先される。
+    const TEXT_LABELS = {
+      Text_choya: '庁屋',
+      Text_higashiya: '東屋',
+      Text_mukaiya: '向屋',
+      Text_nanmon: '南門',
+    };
+    // 範囲から出たと判定するときの余裕（m）。境界でのちらつき防止
+    const KAISETSU_EXIT_MARGIN = 0.5;
 
     const CONFIG = {
       eyeHeight: 1.55, walkSpeed: 1.6,
-      collisionRadius: 0.25,              // v0.6: 0.35 → 0.25
+      collisionRadius: 0.25,
       stepUpMax: 0.45, slopeCosMin: 0.5,
       climbSpeed: 6.0, fallSpeed: 8.0,
       fov: 75, nearPlane: 0.05, farPlane: 1000,
@@ -198,21 +374,21 @@
       skyShaderSunElevation: 30, skyShaderSunAzimuth: 180,
     };
 
+    // 調整用のURLパラメータ（通常の公開URLでは不要）
     const params = new URLSearchParams(location.search);
-    const externalModelUrl = params.get('model');
+    const modelUrl = params.get('model') || MODEL_URL;
     const spawnOverride = params.get('spawn');
     const fogDisabled = params.get('fog') === '0';
     const aoOff = params.get('ao') === 'off';
     const aoDebug = params.get('ao') === 'raw';
     const nowalls = params.get('nowalls') === '1';
-
-    // v0.6: URL ?radius=N でコリジョン半径を実機調整可能
+    const debug = params.get('debug') === '1';
     const radiusOverride = parseFloat(params.get('radius'));
     if (Number.isFinite(radiusOverride) && radiusOverride > 0) {
       CONFIG.collisionRadius = radiusOverride;
-      console.log('[viewer] collisionRadius override:', radiusOverride);
     }
 
+    // ===== 描画の準備 =====
     const canvas = document.getElementById('canvas');
     const renderer = new THREE.WebGLRenderer({
       canvas, antialias: true, powerPreference: 'high-performance',
@@ -263,9 +439,9 @@
       composer.addPass(new OutputPass());
     }
 
-    let skyMesh = null;
+    // ===== 空 =====
     function setupProceduralSky() {
-      skyMesh = new Sky();
+      const skyMesh = new Sky();
       skyMesh.scale.setScalar(450000);
       scene.add(skyMesh);
       const u = skyMesh.material.uniforms;
@@ -279,31 +455,24 @@
       sunVec.setFromSphericalCoords(1, phi, theta);
       u['sunPosition'].value.copy(sunVec);
       scene.background = null;
-      console.log('[viewer] using procedural Sky shader');
     }
     function setupJpgSky(texture) {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       scene.background = texture;
       scene.environment = texture;
-      console.log('[viewer] using sky.jpg as background + environment');
     }
     function loadSky() {
       return new Promise((resolve) => {
-        const loader = new THREE.TextureLoader();
-        loader.load(CONFIG.skyJpgPath,
+        new THREE.TextureLoader().load(CONFIG.skyJpgPath,
           (texture) => { setupJpgSky(texture); resolve(); },
           undefined,
-          () => {
-            console.log('[viewer] sky.jpg not found, falling back to procedural sky');
-            setupProceduralSky();
-            resolve();
-          }
+          () => { console.warn('[viewer] sky.jpg が読めないため計算による空を使用'); setupProceduralSky(); resolve(); }
         );
       });
     }
-    const skyLoadPromise = loadSky();
 
+    // ===== 当たり判定 =====
     const WALKABLE = [];
     const AABB = [];
     function markWalkable(mesh) { WALKABLE.push(mesh); }
@@ -332,89 +501,22 @@
     const _down = new THREE.Vector3(0, -1, 0);
     const _ray = new THREE.Raycaster();
     const _origin = new THREE.Vector3();
-    function findGround(x, z, footY) {
-      _origin.set(x, footY + CONFIG.stepUpMax + 0.05, z);
+    const _n = new THREE.Vector3();
+    function firstWalkableHit(fromY, x, z, far) {
+      _origin.set(x, fromY, z);
       _ray.set(_origin, _down);
-      _ray.far = 1000;
+      _ray.far = far;
       const hits = _ray.intersectObjects(WALKABLE, false);
       for (const h of hits) {
         if (!h.face) continue;
-        const n = h.face.normal.clone()
-          .transformDirection(h.object.matrixWorld).normalize();
-        if (n.y < CONFIG.slopeCosMin) continue;
+        _n.copy(h.face.normal).transformDirection(h.object.matrixWorld);
+        if (_n.y < CONFIG.slopeCosMin) continue;
         return h.point.y;
       }
       return null;
     }
-    function findGroundAt(x, z) {
-      _origin.set(x, 1000, z);
-      _ray.set(_origin, _down);
-      _ray.far = 2000;
-      const hits = _ray.intersectObjects(WALKABLE, false);
-      for (const h of hits) {
-        if (!h.face) continue;
-        const n = h.face.normal.clone()
-          .transformDirection(h.object.matrixWorld).normalize();
-        if (n.y < CONFIG.slopeCosMin) continue;
-        return h.point.y;
-      }
-      return null;
-    }
-
-    function buildTestScene() {
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(80, 80),
-        new THREE.MeshStandardMaterial({ color: 0x9c8a73, roughness: 0.95 })
-      );
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
-      scene.add(ground); markWalkable(ground);
-
-      const grid = new THREE.GridHelper(80, 40, 0x665a48, 0x7a6c58);
-      grid.material.transparent = true; grid.material.opacity = 0.25;
-      grid.position.y = 0.01;
-      scene.add(grid);
-
-      const stoneMat = new THREE.MeshStandardMaterial({ color: 0x8a7e6e, roughness: 0.9 });
-      const stepMat = new THREE.MeshStandardMaterial({ color: 0xa39684, roughness: 0.85 });
-      const pillarMat = new THREE.MeshStandardMaterial({ color: 0xb89878, roughness: 0.7 });
-
-      const walls = [
-        [-10, 0, 0.6, 16, 1.8], [10, 0, 0.6, 16, 1.8], [0, -8, 16, 0.6, 1.8],
-      ];
-      for (const [cx, cz, sx, sz, h] of walls) {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(sx, h, sz), stoneMat);
-        m.position.set(cx, h/2, cz);
-        m.castShadow = true; m.receiveShadow = true;
-        scene.add(m); markBoth(m);
-      }
-      const stonePositions = [[-3,-2],[3,-2],[-3,2],[3,2]];
-      for (const [x, z] of stonePositions) {
-        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.3, 16), stoneMat);
-        base.position.set(x, 0.15, z);
-        base.castShadow = true; base.receiveShadow = true;
-        scene.add(base); markBoth(base);
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 4, 16), pillarMat);
-        pillar.position.set(x, 2.3, z);
-        pillar.castShadow = true; pillar.receiveShadow = true;
-        scene.add(pillar); markBoth(pillar);
-      }
-      for (let i = 0; i < 3; i++) {
-        const topY = (i + 1) * 0.25;
-        const z = 11.5 - i * 0.7;
-        const step = new THREE.Mesh(new THREE.BoxGeometry(4, topY, 0.7), stepMat);
-        step.position.set(0, topY/2, z);
-        step.castShadow = true; step.receiveShadow = true;
-        scene.add(step); markWalkable(step);
-      }
-      const platform = new THREE.Mesh(new THREE.BoxGeometry(8, 0.75, 4), stepMat);
-      platform.position.set(0, 0.375, 14);
-      platform.castShadow = true; platform.receiveShadow = true;
-      scene.add(platform); markBoth(platform);
-    }
-
-    let cameraMarker = null;
-    let spawnPoint = null;
+    const findGround = (x, z, footY) => firstWalkableHit(footY + CONFIG.stepUpMax + 0.05, x, z, 1000);
+    const findGroundAt = (x, z) => firstWalkableHit(1000, x, z, 2000);
 
     function classifyMesh(obj) {
       const name = (obj.name || '').toLowerCase();
@@ -430,10 +532,17 @@
       }
     }
 
+    // ===== GLBの読み込み =====
+    let cameraMarker = null;
+    let spawnPoint = null;
+    const anchors = [];   // 解説の中心（GLB内の文字オブジェクト）
+
+    const normKey = (s) => String(s ?? '').normalize('NFKC').trim().toLowerCase();
+
     function processGltfRoot(root) {
-      let triggerCount = 0;
+      root.updateMatrixWorld(true);
       root.traverse(obj => {
-        const nameOrig = obj.name || '';
+        const nameOrig = obj.userData.name || obj.name || '';
         const name = nameOrig.toLowerCase();
 
         if (name === 'camera') {
@@ -449,130 +558,172 @@
           return;
         }
 
-        if (name.startsWith('trigger_')) {
-          const pos = new THREE.Vector3();
-          obj.getWorldPosition(pos);
-          const worldScale = new THREE.Vector3();
-          obj.getWorldScale(worldScale);
-
-          const ud = obj.userData || {};
-          const lookup = TRIGGER_TEXTS[nameOrig] || TRIGGER_TEXTS[name];
-
-          const title = ud.title
-            || (lookup && lookup.title)
-            || nameOrig.replace(/^trigger_/i, '');
-          let body = ud.body
-            || (lookup && lookup.body)
-            || '(本文未設定)';
-          body = String(body).replace(/\\n/g, '\n');
-
-          const udRadius = parseFloat(ud.radius);
-          const radius = Number.isFinite(udRadius) ? udRadius
-                       : (Math.abs(worldScale.x - 1.0) > 0.01) ? worldScale.x
-                       : TRIGGER_DEFAULT_RADIUS;
-
-          triggerZones.push({
-            position: pos, radius: radius, triggered: false,
-            onEnter: () => showInfo(title, body),
-            onExit: () => hideInfo(),
-          });
-          obj.visible = false;
-          triggerCount++;
-
-          const src = ud.body ? 'GLB' : (lookup && lookup.body ? 'TRIGGER_TEXTS' : 'default');
-          console.log('[viewer] trigger:', nameOrig,
-                      'pos:', pos.toArray().map(n => n.toFixed(1)),
-                      'r:', radius.toFixed(2) + 'm',
-                      'src:', src);
+        // 文字オブジェクト（Text_xxx）と、旧方式の目印（trigger_xxx）を解説の中心として登録
+        const m = /^(text|trigger)_(.+)$/i.exec(nameOrig);
+        if (m && !obj.userData._anchorChild) {
+          const center = new THREE.Vector3();
+          const box = new THREE.Box3().setFromObject(obj);
+          if (box.isEmpty()) obj.getWorldPosition(center); else box.getCenter(center);
+          const labels = [obj.userData.label, TEXT_LABELS[nameOrig], m[2], nameOrig]
+            .filter(Boolean).map(normKey);
+          anchors.push({ node: nameOrig, center, labels: [...new Set(labels)] });
+          if (m[1].toLowerCase() === 'trigger') obj.visible = false;
+          // 文字は当たり判定に含めない
+          obj.traverse(o => { o.userData._anchorChild = true; });
           return;
         }
 
-        if (obj.isMesh) {
+        if (obj.isMesh && !obj.userData._anchorChild) {
           obj.castShadow = true;
           obj.receiveShadow = true;
           classifyMesh(obj);
         }
       });
-      console.log('[viewer] GLB loaded -- walkable:', WALKABLE.length,
-                  'aabb:', AABB.length, 'triggers:', triggerCount,
-                  'camera:', cameraMarker ? cameraMarker.toArray() : '(none)',
-                  'spawn:', spawnPoint ? spawnPoint.toArray() : '(none)',
-                  'collisionRadius:', CONFIG.collisionRadius,
-                  'nowalls:', nowalls);
+      if (debug) {
+        console.log('[viewer] walkable:', WALKABLE.length, 'aabb:', AABB.length,
+          'anchors:', anchors.map(a => `${a.node}[${a.labels.join('/')}] @ ${a.center.toArray().map(n => n.toFixed(2))}`));
+      }
     }
 
-    const progressBar = document.getElementById('loading-progress');
+    const loadingEl = document.getElementById('loading');
     const loadingLabel = document.getElementById('loading-label');
-    const loadingErr = document.getElementById('loading-err');
-    const loadingStatus = document.getElementById('loading-status');
+    const loadingBar = document.getElementById('loading-bar');
+    const startBtn = document.getElementById('start-btn');
+    const startLabel = document.getElementById('start-label');
 
-    function loadExternalModel(url) {
+    function loadModel(url) {
       return new Promise((resolve, reject) => {
         const gltfLoader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
         gltfLoader.setDRACOLoader(dracoLoader);
-        loadingStatus.classList.remove('hidden');
-        loadingLabel.textContent = 'モデルを読み込み中... 0.0 MB';
         gltfLoader.load(url,
-          (gltf) => { processGltfRoot(gltf.scene); scene.add(gltf.scene); resolve(); },
+          (gltf) => {
+            processGltfRoot(gltf.scene);
+            scene.add(gltf.scene);
+            dracoLoader.dispose();
+            resolve();
+          },
           (xhr) => {
-            const mb = (xhr.loaded / 1024 / 1024).toFixed(1);
-            loadingLabel.textContent = `モデルを読み込み中... ${mb} MB`;
             if (xhr.lengthComputable && xhr.total > 0) {
-              const pct = (xhr.loaded / xhr.total) * 100;
-              progressBar.value = Math.min(pct, 100);
+              const pct = Math.min(100, (xhr.loaded / xhr.total) * 100);
+              loadingBar.style.width = pct.toFixed(0) + '%';
+              loadingLabel.textContent = `3Dデータを読み込んでいます　${pct.toFixed(0)}%`;
             }
           },
-          (err) => {
-            console.error('[viewer] GLB load failed:', err);
-            loadingErr.textContent = '読み込み失敗: ' + (err.message || err);
-            loadingErr.classList.remove('hidden');
-            reject(err);
-          }
+          (err) => { dracoLoader.dispose(); reject(err); }
         );
       });
     }
 
-    const triggerZones = [];
-    const infoPanel = document.getElementById('info-panel');
-    const infoTitle = document.getElementById('info-title');
-    const infoBody = document.getElementById('info-body');
-    function showInfo(title, body) {
-      infoTitle.textContent = title;
-      infoBody.textContent = body;
-      infoPanel.classList.add('visible');
+    // ===== 解説ファイル（kaisetsu.txt） =====
+    // 1行に「建物名,距離(m),解説」。解説中の \n は改行。#で始まる行と空行は無視。
+    async function loadKaisetsu() {
+      let res;
+      try { res = await fetch(KAISETSU_URL, { cache: 'no-cache' }); }
+      catch (e) { console.warn('[kaisetsu] 読み込み失敗', e); return []; }
+      if (!res.ok) { console.warn('[kaisetsu] 見つかりません:', res.status); return []; }
+      const buf = await res.arrayBuffer();
+      let text;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+      catch (_) { text = new TextDecoder('shift_jis').decode(buf); }   // Excel等でShift_JIS保存された場合
+      return parseKaisetsu(text);
     }
-    function hideInfo() { infoPanel.classList.remove('visible'); }
-    function updateTriggers(playerPos) {
-      for (const z of triggerZones) {
-        const d = playerPos.distanceTo(z.position);
-        if (d < z.radius && !z.triggered) {
-          z.triggered = true; z.onEnter && z.onEnter();
-        } else if (d >= z.radius * 1.15 && z.triggered) {
-          z.triggered = false; z.onExit && z.onExit();
+    function parseKaisetsu(text) {
+      const byKey = new Map();
+      const lines = text.replace(/^﻿/, '').split(/\r\n|\r|\n/);
+      lines.forEach((raw, i) => {
+        const line = raw.trim();
+        if (!line || line.startsWith('#')) return;
+        const mm = /^([^,，\t]+)[,，\t]\s*([0-9０-９.．]+)\s*(?:m|ｍ)?\s*[,，\t](.*)$/i.exec(line);
+        if (!mm) {
+          if (!/^建物名/.test(line)) console.warn(`[kaisetsu] ${i + 1}行目を読めません:`, line);
+          return;
         }
+        const name = mm[1].trim();
+        const radius = parseFloat(mm[2].normalize('NFKC'));
+        let body = mm[3].trim();
+        if (/^".*"$/s.test(body)) body = body.slice(1, -1).replace(/""/g, '"');   // CSVの引用符
+        body = body.replace(/\\n/g, '\n');
+        if (!(radius > 0)) { console.warn(`[kaisetsu] ${i + 1}行目の距離が不正:`, line); return; }
+        const key = normKey(name);
+        if (byKey.has(key)) byKey.get(key).body += '\n\n' + body;   // 同じ建物名は段落として続ける
+        else byKey.set(key, { key, name, radius, body });
+      });
+      return [...byKey.values()];
+    }
+
+    const zones = [];
+    function buildZones(entries) {
+      for (const e of entries) {
+        const a = anchors.find(a => a.labels.includes(e.key));
+        if (!a) {
+          console.warn(`[kaisetsu] 「${e.name}」に当たる文字がGLB内にありません。候補:`,
+            anchors.map(a => a.labels[0]).join('、'));
+          continue;
+        }
+        zones.push({ name: e.name, body: e.body, radius: e.radius, center: a.center,
+                     inside: false, dismissed: false, dist: Infinity });
       }
     }
 
+    const panel = document.getElementById('kaisetsu');
+    const panelTitle = document.getElementById('kaisetsu-title');
+    const panelBody = document.getElementById('kaisetsu-body');
+    let activeZone = null;
+
+    function showPanel(z) {
+      panelTitle.textContent = z.name;
+      panelBody.textContent = z.body;
+      panelBody.scrollTop = 0;
+      panel.classList.add('visible');
+      // 長文で枠からあふれる時だけ指でスクロールできるようにする（それ以外は下の画面の長押し移動を妨げない）
+      panel.classList.toggle('scrollable', panelBody.scrollHeight > panelBody.clientHeight + 1);
+    }
+    function hidePanel() { panel.classList.remove('visible', 'scrollable'); }
+
+    function updateKaisetsu(pos) {
+      let best = null;
+      for (const z of zones) {
+        z.dist = Math.hypot(pos.x - z.center.x, pos.z - z.center.z);   // 水平距離
+        if (!z.inside && z.dist < z.radius) {
+          z.inside = true; z.dismissed = false;          // 範囲に入った
+        } else if (z.inside && z.dist > z.radius + KAISETSU_EXIT_MARGIN) {
+          z.inside = false; z.dismissed = false;         // 範囲から出た → 次に入れば再表示
+        }
+        if (z.inside && !z.dismissed && (!best || z.dist < best.dist)) best = z;
+      }
+      if (best !== activeZone) {
+        activeZone = best;
+        if (best) showPanel(best); else hidePanel();
+      }
+    }
+    document.getElementById('kaisetsu-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeZone) activeZone.dismissed = true;      // 範囲を出るまで再表示しない
+      activeZone = null;
+      hidePanel();
+    });
+
+    // ===== 端末の向き =====
     const deviceState = {
       alpha: null, beta: null, gamma: null,
       screenOrient: 0, enabled: false,
       compassHeading: null, yawOffset: 0,
     };
     const _zee = new THREE.Vector3(0, 0, 1);
+    const _yAxis = new THREE.Vector3(0, 1, 0);
     const _euler = new THREE.Euler();
     const _q0 = new THREE.Quaternion();
     const _q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+    const _yawQ = new THREE.Quaternion();
     function setCameraQuaternion(alpha, beta, gamma, orient) {
       _euler.set(beta, alpha, -gamma, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
       camera.quaternion.multiply(_q1);
       camera.quaternion.multiply(_q0.setFromAxisAngle(_zee, -orient));
       if (deviceState.yawOffset !== 0) {
-        const yawQ = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(0, 1, 0), deviceState.yawOffset);
-        camera.quaternion.premultiply(yawQ);
+        camera.quaternion.premultiply(_yawQ.setFromAxisAngle(_yAxis, deviceState.yawOffset));
       }
     }
     function onDeviceOrientation(e) {
@@ -585,8 +736,7 @@
       }
     }
     function onScreenOrientation() {
-      const angle = (screen.orientation && screen.orientation.angle)
-        || window.orientation || 0;
+      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
       deviceState.screenOrient = THREE.MathUtils.degToRad(angle);
     }
     onScreenOrientation();
@@ -606,6 +756,7 @@
       } catch (err) { console.error(err); return false; }
     }
 
+    // ===== 操作 =====
     const input = {
       forward: false,
       kbd: { w: false, a: false, s: false, d: false },
@@ -614,18 +765,9 @@
     canvas.addEventListener('touchstart', (e) => { input.forward = true; e.preventDefault(); }, { passive: false });
     canvas.addEventListener('touchend',   () => { input.forward = false; });
     canvas.addEventListener('touchcancel',() => { input.forward = false; });
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'w' || e.key === 'ArrowUp')    input.kbd.w = true;
-      if (e.key === 'a' || e.key === 'ArrowLeft')  input.kbd.a = true;
-      if (e.key === 's' || e.key === 'ArrowDown')  input.kbd.s = true;
-      if (e.key === 'd' || e.key === 'ArrowRight') input.kbd.d = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'w' || e.key === 'ArrowUp')    input.kbd.w = false;
-      if (e.key === 'a' || e.key === 'ArrowLeft')  input.kbd.a = false;
-      if (e.key === 's' || e.key === 'ArrowDown')  input.kbd.s = false;
-      if (e.key === 'd' || e.key === 'ArrowRight') input.kbd.d = false;
-    });
+    const KEYMAP = { w: 'w', ArrowUp: 'w', a: 'a', ArrowLeft: 'a', s: 's', ArrowDown: 's', d: 'd', ArrowRight: 'd' };
+    window.addEventListener('keydown', (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) input.kbd[k] = true; });
+    window.addEventListener('keyup',   (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) input.kbd[k] = false; });
     canvas.addEventListener('mousedown', (e) => {
       input.mouseDrag.active = true;
       input.mouseDrag.lastX = e.clientX; input.mouseDrag.lastY = e.clientY;
@@ -637,81 +779,68 @@
       const dy = e.clientY - input.mouseDrag.lastY;
       input.mouseDrag.yaw   -= dx * 0.003;
       input.mouseDrag.pitch -= dy * 0.003;
-      input.mouseDrag.pitch = Math.max(-Math.PI/2 + 0.05,
-                              Math.min(Math.PI/2 - 0.05, input.mouseDrag.pitch));
+      input.mouseDrag.pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, input.mouseDrag.pitch));
       input.mouseDrag.lastX = e.clientX; input.mouseDrag.lastY = e.clientY;
     });
 
+    // ===== 毎フレームの処理 =====
     const clock = new THREE.Clock();
     const statsEl = document.getElementById('stats');
     let frameCount = 0;
     let started = false;
+    const _mouseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    const _fwd = new THREE.Vector3(), _rgt = new THREE.Vector3(), _move = new THREE.Vector3();
+    const initialCameraPos = new THREE.Vector3(0, CONFIG.eyeHeight, 5);
 
     function tick() {
       const dt = Math.min(clock.getDelta(), 0.1);
       if (deviceState.enabled && deviceState.alpha !== null) {
-        setCameraQuaternion(deviceState.alpha, deviceState.beta,
-                            deviceState.gamma, deviceState.screenOrient);
+        setCameraQuaternion(deviceState.alpha, deviceState.beta, deviceState.gamma, deviceState.screenOrient);
       } else {
-        const e = new THREE.Euler(input.mouseDrag.pitch, input.mouseDrag.yaw, 0, 'YXZ');
-        camera.quaternion.setFromEuler(e);
+        _mouseEuler.set(input.mouseDrag.pitch, input.mouseDrag.yaw, 0, 'YXZ');
+        camera.quaternion.setFromEuler(_mouseEuler);
       }
-      const moveVec = new THREE.Vector3();
-      const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-      const rgt = new THREE.Vector3(1, 0,  0).applyQuaternion(camera.quaternion);
-      fwd.y = 0; fwd.normalize();
-      rgt.y = 0; rgt.normalize();
-      if (input.forward) moveVec.add(fwd);
-      if (input.kbd.w)   moveVec.add(fwd);
-      if (input.kbd.s)   moveVec.sub(fwd);
-      if (input.kbd.d)   moveVec.add(rgt);
-      if (input.kbd.a)   moveVec.sub(rgt);
+      _move.set(0, 0, 0);
+      _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion); _fwd.y = 0; _fwd.normalize();
+      _rgt.set(1, 0, 0).applyQuaternion(camera.quaternion);  _rgt.y = 0; _rgt.normalize();
+      if (input.forward) _move.add(_fwd);
+      if (input.kbd.w)   _move.add(_fwd);
+      if (input.kbd.s)   _move.sub(_fwd);
+      if (input.kbd.d)   _move.add(_rgt);
+      if (input.kbd.a)   _move.sub(_rgt);
       const footY = camera.position.y - CONFIG.eyeHeight;
 
-      if (moveVec.lengthSq() > 0) {
-        moveVec.normalize().multiplyScalar(CONFIG.walkSpeed * dt);
+      if (_move.lengthSq() > 0) {
+        _move.normalize().multiplyScalar(CONFIG.walkSpeed * dt);
         const curX = camera.position.x;
         const curZ = camera.position.z;
-        const newX = curX + moveVec.x;
+        const newX = curX + _move.x;
         if (!isBlocked(newX, curZ, footY, curX, curZ)) camera.position.x = newX;
-        const newZ = curZ + moveVec.z;
-        if (!isBlocked(camera.position.x, newZ, footY, camera.position.x, curZ))
-          camera.position.z = newZ;
+        const newZ = curZ + _move.z;
+        if (!isBlocked(camera.position.x, newZ, footY, camera.position.x, curZ)) camera.position.z = newZ;
       }
 
-      const groundY = findGround(camera.position.x, camera.position.z,
-                                 camera.position.y - CONFIG.eyeHeight);
+      const groundY = findGround(camera.position.x, camera.position.z, camera.position.y - CONFIG.eyeHeight);
       if (groundY !== null) {
-        const targetY = groundY + CONFIG.eyeHeight;
-        const dy = targetY - camera.position.y;
-        camera.position.y += Math.max(-CONFIG.fallSpeed * dt,
-                                       Math.min(CONFIG.climbSpeed * dt, dy));
+        const dy = groundY + CONFIG.eyeHeight - camera.position.y;
+        camera.position.y += Math.max(-CONFIG.fallSpeed * dt, Math.min(CONFIG.climbSpeed * dt, dy));
       }
-      if (camera.position.y < -100) {
-        camera.position.copy(initialCameraPos);
-      }
-      updateTriggers(camera.position);
-      if ((frameCount++ % 10) === 0) {
-        const px = camera.position.x.toFixed(1);
-        const py = camera.position.y.toFixed(2);
-        const pz = camera.position.z.toFixed(1);
-        const heading = deviceState.compassHeading !== null
-          ? deviceState.compassHeading.toFixed(0) + '°' : '--';
-        statsEl.innerHTML = `XZ ${px}, ${pz}<br>EYE Y ${py}<br>N ${heading}`;
+      if (camera.position.y < -100) camera.position.copy(initialCameraPos);
+
+      updateKaisetsu(camera.position);
+
+      if (debug && (frameCount++ % 10) === 0) {
+        const p = camera.position;
+        const heading = deviceState.compassHeading !== null ? deviceState.compassHeading.toFixed(0) + '°' : '--';
+        const near = zones.slice().sort((a, b) => a.dist - b.dist)[0];
+        statsEl.textContent = `XZ ${p.x.toFixed(1)}, ${p.z.toFixed(1)}\nEYE Y ${p.y.toFixed(2)}\nN ${heading}` +
+          (near ? `\n${near.name} ${near.dist.toFixed(1)}m / ${near.radius}m` : '');
       }
       if (composer) composer.render();
       else renderer.render(scene, camera);
       requestAnimationFrame(tick);
     }
 
-    let modelLoadPromise = null;
-    if (externalModelUrl) {
-      modelLoadPromise = loadExternalModel(externalModelUrl).catch(() => {});
-    } else {
-      buildTestScene();
-    }
-
-    const initialCameraPos = new THREE.Vector3(0, CONFIG.eyeHeight, 5);
     function applySpawnPoint() {
       if (spawnOverride) {
         const parts = spawnOverride.split(',').map(Number);
@@ -722,33 +851,56 @@
         const groundY = findGroundAt(cameraMarker.x, cameraMarker.z);
         const y = (groundY !== null) ? (groundY + CONFIG.eyeHeight) : cameraMarker.y;
         initialCameraPos.set(cameraMarker.x, y, cameraMarker.z);
-        console.log('[viewer] spawn from camera marker:', initialCameraPos.toArray(),
-                    '(groundY:', groundY, ')');
       } else if (spawnPoint) {
         initialCameraPos.set(spawnPoint.x, spawnPoint.y + CONFIG.eyeHeight, spawnPoint.z);
       }
       camera.position.copy(initialCameraPos);
     }
 
-    document.getElementById('permission-btn').addEventListener('click', async () => {
+    // ===== 読み込み開始（ページを開いた時点で先に読み始める） =====
+    const ready = Promise.all([loadModel(modelUrl), loadKaisetsu(), loadSky()])
+      .then(([, entries]) => {
+        buildZones(entries);
+        applySpawnPoint();
+        try { renderer.compile(scene, camera); } catch (_) {}   // 開始直後のカクつきを減らす
+        loadingBar.style.width = '100%';
+        loadingLabel.textContent = '準備ができました';
+        loadingEl.classList.add('done');
+      });
+    ready.catch((err) => {
+      console.error('[viewer] 読み込み失敗:', err);
+      loadingLabel.innerHTML = '<span class="err">3Dデータを読み込めませんでした。<br>ページを再読み込みしてください。</span>';
+      loadingEl.classList.add('done');
+      startBtn.disabled = true;
+      startLabel.textContent = 'スタート';
+    });
+
+    const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    document.getElementById('move-hint').textContent = isTouch
+      ? '画面を長押しすると前に進みます'
+      : 'ドラッグで見回し／W・A・S・Dキーで移動';
+
+    // ===== スタート =====
+    startBtn.addEventListener('click', async () => {
       if (started) return;
       started = true;
-      const btn = document.getElementById('permission-btn');
-      btn.disabled = true;
-      btn.textContent = '...';
-      try { await requestMotionPermission(); } catch (e) { console.error(e); }
-      if (modelLoadPromise) {
-        loadingStatus.classList.remove('hidden');
-        try { await modelLoadPromise; } catch (_) {}
-      }
-      await skyLoadPromise;
-      applySpawnPoint();
-      document.getElementById('permission-overlay').classList.add('hidden');
+      // どちらもボタンを押した直後に呼ぶ必要がある（iOSの許可ダイアログ／Androidの全画面）
+      const permission = requestMotionPermission();
       try {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        }
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) { const p = req.call(el); if (p && p.catch) p.catch(() => {}); }
       } catch (_) {}
+      startBtn.disabled = true;
+      startLabel.textContent = '読み込み中…';
+      await permission;
+      try { await ready; } catch (_) { return; }
+      const start = document.getElementById('start');
+      start.classList.add('leaving');
+      setTimeout(() => start.classList.add('hidden'), 450);
+      document.getElementById('hud').classList.remove('hidden');
+      if (debug) statsEl.classList.remove('hidden');
+      clock.getDelta();
       tick();
     });
 
@@ -768,7 +920,10 @@
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
       if (composer) composer.setSize(w, h);
+      if (activeZone) panel.classList.toggle('scrollable', panelBody.scrollHeight > panelBody.clientHeight + 1);
     });
+
+    if (debug) window.__viewer = { camera, zones, anchors, input };
   </script>
 </body>
 </html>
