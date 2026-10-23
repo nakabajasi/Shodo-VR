@@ -381,7 +381,8 @@
     const fogDisabled = params.get('fog') === '0';
     const aoOff = params.get('ao') === 'off';
     const aoDebug = params.get('ao') === 'raw';
-    const nowalls = params.get('nowalls') === '1';
+    // 既定は壁の当たり判定なし（建物の中にも入れる）。?walls=1 で有効
+    const walls = params.get('walls') === '1';
     const debug = params.get('debug') === '1';
     const radiusOverride = parseFloat(params.get('radius'));
     if (Number.isFinite(radiusOverride) && radiusOverride > 0) {
@@ -477,6 +478,7 @@
     const AABB = [];
     function markWalkable(mesh) { WALKABLE.push(mesh); }
     function markBlocking(mesh) {
+      if (!walls) return;
       mesh.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(mesh);
       AABB.push({ min: box.min.clone(), max: box.max.clone() });
@@ -484,7 +486,7 @@
     function markBoth(mesh) { markWalkable(mesh); markBlocking(mesh); }
 
     function isBlocked(newX, newZ, footY, curX, curZ) {
-      if (nowalls) return false;
+      if (!walls) return false;
       const r = CONFIG.collisionRadius;
       const headY = footY + CONFIG.eyeHeight + 0.5;
       for (const c of AABB) {
