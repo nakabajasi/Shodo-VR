@@ -1,40 +1,17 @@
-# Shodo-VR
-正道官衙遺跡VR体験 — Walking through experience of archaeological site
+# XR正道官衙遺跡（GitHub Pages版）
 
-GitHub PagesのURLを開くと、スタート画面から直接 `site.glb` の中を歩けます。
+京都府城陽市・国指定史跡「正道官衙遺跡」の Web AR/VR ガイドプロトタイプです。  
+ビルド不要の静的構成（HTML/CSS/JS）のため、そのまま **GitHub Pages** に公開して動作します。
 
-## ファイル
-| ファイル | 内容 |
-|---|---|
-| `index.html` | ビューワー本体（スタート画面・VR表示・解説表示） |
-| `site.glb` | 遺跡の3Dモデル（Draco圧縮済み） |
-| `sky.jpg` | 空の全天球画像 |
-| `kanjin.webp` / `kanjin.png` | スタート画面のキャラクター（背景透過） |
-| `kaisetsu.txt` | 建物の解説 |
+## GitHub Pages 公開手順
+1. このフォルダの中身（`index.html`, `css/`, `js/`, `assets/`）を GitHub リポジトリのルート（または `/docs`）に配置して push します。
+2. リポジトリの **Settings → Pages** で対象ブランチを公開設定にします。
+3. 発行された `https://<ユーザー名>.github.io/<リポジトリ名>/` にスマートフォンからアクセスしてください。
 
-## 解説（kaisetsu.txt）
-1行に `建物名,距離(m),解説`。
+## GitHub Pages での GPS・AR 動作仕様
+- GitHub Pages は標準で **HTTPS** 配信されるため、ブラウザの `Geolocation API`（GPS位置情報）・`getUserMedia`（カメラ）・`<model-viewer>` による Web AR（Android: `.glb` / iOS Quick Look: `.usdz`）がそのまま動作します。
+- 初期状態では動作確認しやすいように **デモモード（GPS現地制限解除）** が ON になっています。本番運用時は `js/app.js` の `demoMode: false` に変更してください。
+- 地図タイルは OpenStreetMap および国土地理院タイルを使用しているため、APIキー不要・無料で運用可能です。
 
-- 建物名：3D空間に表示されている文字（GLB内の `Text_xxx` オブジェクト）。対応は `index.html` の `TEXT_LABELS` にある。Blenderで文字オブジェクトにカスタムプロパティ `label` を付けて書き出した場合はそちらが優先される。ノード名の後半（`choya` など）でも指定できる。
-- 距離：文字の中心からの水平距離。範囲に入ると解説が表示され、×で閉じると範囲から出るまで再表示しない。
-- 解説中の `\n` は改行。`#` で始まる行と空行は無視。
-
-## GLBを作り直したとき
-Blenderから書き出したGLBは、次の手順で軽くしてから置き換える（テクスチャを使っていないのでUVを削除し、Draco圧縮する）。
-
-```
-npx @gltf-transform/cli dedup in.glb tmp1.glb
-npx @gltf-transform/cli weld tmp1.glb tmp2.glb
-npx @gltf-transform/cli draco tmp2.glb site.glb --method edgebreaker --quantize-position 16 --quantize-normal 10
-```
-UV（TEXCOORD）の削除はBlenderの書き出し設定で「UVs」のチェックを外すのが簡単。
-
-## 調整用URLパラメータ
-| パラメータ | 内容 |
-|---|---|
-| `?debug=1` | 現在位置と、最寄りの解説範囲までの距離を表示 |
-| `?model=xxx.glb` | 別のGLBを表示 |
-| `?spawn=x,y,z` | 開始位置を指定 |
-| `?ao=off` | 陰影処理（GTAO）を切る |
-| `?walls=1` | 壁の当たり判定を有効にする（既定は無効で、建物の中にも入れる） |
-| `?radius=0.25` | 当たり判定の半径（m）。`walls=1` のときのみ |
+## 素材の差し替え方法
+同梱の `ASSET_LIST.md` を参照し、`assets/images/` および `assets/models/` 内の同名ファイルを上書きしてください。

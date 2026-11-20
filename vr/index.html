@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f4efe3">
+  <title>正道官衙遺跡 ウォークスルー体験</title>
+  <meta name="description" content="奈良時代に役所のあった正道官衙遺跡を歩き回ろう！">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="正道官衙遺跡 ウォークスルー体験">
+  <meta property="og:description" content="奈良時代に役所のあった正道官衙遺跡を歩き回ろう！">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPMincho&display=swap">
+  <link rel="preload" href="site.glb" as="fetch" crossorigin>
+  <style>
+    /* 色はキャラクター（藍の袍・縹の帯・生成りの袴）から取っている */
+    :root {
+      --kinari: #f4efe3;        /* 背景：生成り */
+      --kinari-deep: #e6ddc9;
+      --ai: #2a3d72;            /* 袍の藍 */
+      --ai-deep: #1c2a50;
+      --hanada: #6b8bd6;        /* 帯の縹 */
+      --sumi: #24262f;          /* 文字 */
+      --sumi-soft: #555867;
+      --hakama: #b8b28c;        /* 袴の影色 */
+      --ud: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      --ud-mincho: "BIZ UDPMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Yu Mincho", serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --joy: 136px;             /* ジョイスティックの直径 */
+      --joy-gap: 20px;          /* 画面端からの余白 */
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--kinari); color: var(--sumi);
+      font-family: var(--ud);
+      -webkit-touch-callout: none; -webkit-user-select: none;
+      user-select: none; overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
+    }
+    canvas { display: block; touch-action: none; }
+    .hidden { display: none !important; }
+
+    /* ===== スタート画面 ===== */
+    #start {
+      position: fixed; inset: 0; z-index: 100;
+      background:
+        radial-gradient(120% 75% at 70% 30%, #fbf8f1 0%, var(--kinari) 55%, var(--kinari-deep) 100%);
+      padding:
+        max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .45s ease;
+    }
+    #start.leaving { opacity: 0; pointer-events: none; }
+    .start-layout {
+      --fig-h: min(60vh, 560px);
+      --fig-h: min(60svh, 560px);
+      --fig-w: calc(var(--fig-h) * 0.29);      /* 人物画像の縦横比 464:1600 */
+      width: 100%; max-width: 1040px; height: 100%; max-height: 900px;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "title"
+        "figure"
+        "action";
+      row-gap: 14px;
+    }
+    .start-title {
+      grid-area: title;
+      font-family: var(--ud-mincho); font-weight: 400;
+      color: var(--ai-deep);
+      line-height: 1.25; letter-spacing: .06em;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(42, 61, 114, .22);
+    }
+    .start-title .t-main {
+      display: block;
+      font-size: clamp(2.1rem, 10vw, 3.6rem);
+    }
+    .start-title .t-sub {
+      display: inline-block; margin-top: 8px;
+      font-family: var(--ud); font-weight: 700;
+      font-size: clamp(1rem, 4.4vw, 1.35rem); letter-spacing: .18em;
+      color: #fff; background: var(--ai);
+      padding: .22em .7em .22em .88em; border-radius: 6px;
+    }
+    /* 吹き出しは人物の頭の左横に置く */
+    .bubble {
+      position: absolute; z-index: 1;
+      right: calc(100% + 14px); top: calc(var(--fig-h) * 0.035);
+      width: min(17rem, calc(100vw - var(--fig-w) - 62px));
+      background: #fff; color: var(--sumi);
+      border: 2px solid var(--ai);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: clamp(1rem, 4.3vw, 1.2rem); line-height: 1.75; font-weight: 700;
+      box-shadow: 0 6px 16px rgba(28, 42, 80, .10);
+    }
+    .bubble .ph { display: inline-block; }     /* 文節の途中で改行しない */
+    /* 吹き出しのしっぽ（右＝人物の顔の方へ） */
+    .bubble::before, .bubble::after {
+      content: ""; position: absolute; top: 26px;
+      border-style: solid; border-color: transparent;
+    }
+    .bubble::before { right: -14px; border-width: 9px 0 9px 14px; border-left-color: var(--ai); }
+    .bubble::after  { right: -10px; border-width: 7px 0 7px 11px; border-left-color: #fff; top: 28px; }
+    .figure {
+      grid-area: figure; align-self: center; justify-self: end;
+      position: relative; width: var(--fig-w); height: var(--fig-h);
+      margin-right: 2%;
+    }
+    .figure img {
+      display: block; width: 100%; height: 100%; object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(28, 42, 80, .12));
+    }
+    .figure::after {
+      content: ""; position: absolute; z-index: -1;
+      left: 50%; bottom: -8px; width: 150%; height: 22px;
+      transform: translateX(-50%);
+      background: radial-gradient(closest-side, rgba(36, 38, 47, .20), rgba(36, 38, 47, 0));
+    }
+    .action {
+      grid-area: action;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding-top: 4px;
+    }
+    #start-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+      width: min(100%, 20rem); min-height: 58px;
+      font-family: var(--ud); font-weight: 700; font-size: 1.3rem; letter-spacing: .24em;
+      color: #fff; background: var(--ai);
+      border: none; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 5px 0 var(--ai-deep), 0 10px 18px rgba(28, 42, 80, .25);
+      transition: transform .08s ease, box-shadow .08s ease, background .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #start-btn svg { width: .8em; height: .8em; flex: none; }
+    #start-btn:hover { background: #33498a; }
+    #start-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ai-deep), 0 4px 10px rgba(28, 42, 80, .25); }
+    #start-btn:focus-visible { outline: 3px solid var(--hanada); outline-offset: 4px; }
+    #start-btn:disabled { cursor: progress; background: #4b5b8a; }
+    .loading {
+      width: min(100%, 20rem);
+      display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+      font-size: .8rem; color: var(--sumi-soft); text-align: center;
+      min-height: 2.2em;
+    }
+    .loading .bar {
+      height: 4px; border-radius: 2px; background: rgba(42, 61, 114, .14); overflow: hidden;
+    }
+    .loading .bar span {
+      display: block; height: 100%; width: 0%;
+      background: var(--hanada); transition: width .2s linear;
+    }
+    .loading.done .bar { visibility: hidden; }
+    .loading .err { color: #a1342b; font-weight: 700; }
+
+    /* 横長画面（PC・スマホ横向き）：文字を左、人物を右 */
+    @media (orientation: landscape) and (min-aspect-ratio: 5/4) {
+      .start-layout {
+        --fig-h: min(84vh, 760px);
+        --fig-h: min(84svh, 760px);
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: 1fr auto auto 1.4fr;
+        grid-template-areas:
+          ".      figure"
+          "title  figure"
+          "action figure"
+          ".      figure";
+        column-gap: clamp(16px, 4vw, 48px); row-gap: clamp(14px, 4vh, 36px);
+      }
+      .start-title { justify-self: start; padding-right: 1.5em; }
+      .start-title .t-main { font-size: clamp(2rem, 5.2vw, 4.4rem); }
+      .start-title .t-sub { font-size: clamp(1rem, 1.6vw, 1.5rem); }
+      .figure { margin-right: 0; }
+      .bubble {
+        width: min(23rem, calc(100vw - var(--fig-w) - 120px));
+        font-size: clamp(1rem, .9vw + .5rem, 1.4rem);
+      }
+      #start-btn { font-size: clamp(1.2rem, 1vw + .7rem, 1.45rem); }
+      .action { align-items: flex-start; }
+      .loading { text-align: left; }
+    }
+    /* 背の低い縦長画面 */
+    @media (orientation: portrait) and (max-height: 640px) {
+      .start-layout { --fig-h: 50vh; --fig-h: 50svh; }
+      .start-title .t-main { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+    }
+
+    /* ===== VR中の表示 ===== */
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+    #hud .top-bar {
+      position: absolute; top: env(safe-area-inset-top, 0); left: 0; right: 0;
+      padding: .7rem 1rem; display: flex;
+      justify-content: space-between; align-items: flex-start;
+    }
+    #hud .top-bar .title {
+      font-family: var(--ud); font-weight: 700; font-size: .9rem; letter-spacing: .06em;
+      color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .65), 0 0 1px rgba(0, 0, 0, .8);
+    }
+    #hud .top-bar .stats {
+      font-family: var(--mono); font-size: .7rem; line-height: 1.45; text-align: right;
+      color: #fff; background: rgba(0, 0, 0, .5); padding: .3rem .5rem; border-radius: 4px;
+      white-space: pre;
+    }
+    /* 移動用ジョイスティック：大きい円＝台座、小さい円＝つまみ、中央の点 */
+    #joystick {
+      position: absolute; pointer-events: auto; touch-action: none;
+      left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap));
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap));
+      width: var(--joy); height: var(--joy); border-radius: 50%;
+      background: rgba(247, 246, 242, .7);
+      border: 1.5px solid #4a4a4c;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      cursor: grab; transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #joystick.active { background: rgba(247, 246, 242, .82); cursor: grabbing; }
+    #joystick-knob {
+      position: absolute; left: 50%; top: 50%;
+      width: 33%; height: 33%; border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: #fafaf9;
+      border: 1.5px solid #4a4a4c;
+      transition: transform .18s ease-out;
+      pointer-events: none;
+    }
+    #joystick.active #joystick-knob { transition: none; }
+    #joystick-knob::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      width: 19%; height: 19%; border-radius: 50%;
+      transform: translate(-50%, -50%); background: #1d1d1f;
+    }
+    #move-hint {
+      position: absolute;
+      left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap) + var(--joy) + 12px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + var(--joy) / 2);
+      transform: translateY(50%);
+      max-width: min(15rem, calc(100% - var(--joy) - 60px));
+      font-family: var(--ud); font-size: .8rem; line-height: 1.5;
+      color: #fff; background: rgba(28, 42, 80, .78);
+      padding: .45rem .85rem; border-radius: 12px;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      transition: opacity .6s ease;
+    }
+    #move-hint.faded { opacity: 0; }
+    #reset-btn {
+      position: absolute; pointer-events: auto;
+      right: calc(env(safe-area-inset-right, 0px) + 1rem);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap));
+      font-family: var(--ud); font-weight: 700; font-size: .8rem;
+      color: var(--ai-deep); background: rgba(244, 239, 227, .94);
+      border: none; padding: .55rem 1rem; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+    }
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255, 255, 255, .55); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
+    }
+
+    /* ===== 解説（黒地に白抜き文字・UDフォント） ===== */
+    #kaisetsu {
+      position: fixed; left: 50%; z-index: 30;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + var(--joy) + 14px);
+      width: min(36rem, calc(100% - 24px));
+      transform: translate(-50%, 14px);
+      background: rgba(0, 0, 0, .88); color: #fff;
+      border: 1px solid rgba(255, 255, 255, .22); border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+      padding: .95rem 3.3rem 1.05rem 1.15rem;
+      font-family: var(--ud);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s;
+    }
+    #kaisetsu.visible {
+      opacity: 1; visibility: visible; transform: translate(-50%, 0);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    #kaisetsu.scrollable { pointer-events: auto; }
+    #kaisetsu-title {
+      font-size: 1.3rem; font-weight: 700; letter-spacing: .06em; line-height: 1.4;
+      margin-bottom: .35rem;
+    }
+    #kaisetsu-body {
+      font-size: 1.06rem; line-height: 1.85; white-space: pre-wrap;
+      word-break: normal; word-break: auto-phrase; line-break: strict;
+      max-height: 38vh; max-height: 38svh; overflow-y: auto; overscroll-behavior: contain;
+    }
+    #kaisetsu-close {
+      position: absolute; top: 6px; right: 6px;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ud); font-size: 1.75rem; line-height: 1; font-weight: 400;
+      color: #fff; background: transparent; border: none; cursor: pointer;
+      pointer-events: auto; -webkit-tap-highlight-color: transparent;
+    }
+    #kaisetsu-close:hover, #kaisetsu-close:focus-visible { background: rgba(255, 255, 255, .16); outline: none; }
+
+    /* 横幅に余裕がある画面：解説は下端中央（ジョイスティックと重ならない） */
+    @media (min-width: 920px) {
+      #kaisetsu { bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem); }
+    }
+    /* スマホ横向き：ジョイスティックを小さくし、解説はその右に置く */
+    @media (orientation: landscape) and (max-height: 520px) and (max-width: 919px) {
+      :root { --joy: 112px; --joy-gap: 14px; }
+      #kaisetsu {
+        left: calc(env(safe-area-inset-left, 0px) + var(--joy-gap) + var(--joy) + 14px);
+        width: calc(100% - var(--joy-gap) - var(--joy) - 40px); max-width: 36rem;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + var(--joy-gap) + 3rem);
+        transform: translateY(14px);
+      }
+      #kaisetsu.visible { transform: translateY(0); }
+    }
+
+    .back-map-btn {
+      position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: calc(env(safe-area-inset-left, 0px) + 12px);
+      z-index: 120; pointer-events: auto;
+      font-family: var(--ud); font-weight: 700; font-size: .82rem;
+      color: #fff; background: rgba(28, 42, 80, .86);
+      border: 1px solid rgba(255,255,255,.35); padding: .48rem .9rem; border-radius: 999px;
+      text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    #hud .top-bar .title { margin-left: 7.4rem; }
+    @media (prefers-reduced-motion: reduce) {
+      #start, #kaisetsu, #kaisetsu.visible { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-map-btn" href="../index.html#map">← マップへ戻る</a>
+  <!-- 準備中ローディング画面（読み込み完了で自動遷移） -->
+  <div id="start">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;width:min(320px,86vw);">
+      <p style="font-family:var(--ud-mincho);font-size:1.35rem;font-weight:700;color:var(--ai-deep);letter-spacing:.12em;">準備中…</p>
+      <div class="loading" id="loading" aria-live="polite" style="width:100%;">
+        <div class="label" id="loading-label">3Dデータを読み込んでいます</div>
+        <div class="bar"><span id="loading-bar"></span></div>
+      </div>
+      <button id="start-btn" type="button" class="hidden"><span id="start-label">スタート</span></button>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="top-bar">
+      <span class="title">正道官衙遺跡 ウォークスルー体験</span>
+      <span class="stats hidden" id="stats">--</span>
+    </div>
+    <div id="crosshair"></div>
+    <div id="joystick" role="application" aria-label="移動（中の円を動かした方向に歩く）"><div id="joystick-knob"></div></div>
+    <span id="move-hint">中の円を動かすと歩けます</span>
+    <button id="reset-btn" type="button">はじめの位置へ</button>
+  </div>
+
+  <!-- 建物の解説 -->
+  <section id="kaisetsu" role="region" aria-live="polite" aria-labelledby="kaisetsu-title">
+    <h2 id="kaisetsu-title"></h2>
+    <div id="kaisetsu-body"></div>
+    <button id="kaisetsu-close" type="button" aria-label="解説を閉じる">×</button>
+  </section>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+    import { Sky } from 'three/addons/objects/Sky.js';
+
+    // ===== 設定 =====
+    const MODEL_URL = 'site.glb';
+    const KAISETSU_URL = 'kaisetsu.txt';
+
+    // GLB内の文字オブジェクト（ノード名）→ 3D空間に表示されている文字。
+    // kaisetsu.txt の「建物名」はこの文字で書く（ノード名の choya 等でも可）。
+    // Blenderで文字オブジェクトにカスタムプロパティ label を付けて
+    // 書き出した場合はそちらが優先される。
+    const TEXT_LABELS = {
+      Text_choya: '庁屋',
+      Text_higashiya: '東屋',
+      Text_mukaiya: '向屋',
+      Text_nanmon: '南門',
+    };
+    // 範囲から出たと判定するときの余裕（m）。境界でのちらつき防止
+    const KAISETSU_EXIT_MARGIN = 0.5;
+
+    const CONFIG = {
+      eyeHeight: 1.55, walkSpeed: 1.6,
+      collisionRadius: 0.25,
+      stepUpMax: 0.45, slopeCosMin: 0.5,
+      climbSpeed: 6.0, fallSpeed: 8.0,
+      fov: 75, nearPlane: 0.05, farPlane: 1000,
+      toneMappingExposure: 1.0,
+      gtao: { radius: 0.5, distanceExponent: 1.0, thickness: 1.0, scale: 1.0, samples: 16 },
+      hemiIntensity: 0.4, sunIntensity: 1.0, sunPosition: [8, 14, 6],
+      skyJpgPath: 'sky.jpg',
+      skyShaderTurbidity: 4, skyShaderRayleigh: 2,
+      skyShaderSunElevation: 30, skyShaderSunAzimuth: 180,
+    };
+
+    // 調整用のURLパラメータ（通常の公開URLでは不要）
+    const params = new URLSearchParams(location.search);
+    const modelUrl = params.get('model') || MODEL_URL;
+    const spawnOverride = params.get('spawn');
+    const cameraParam = params.get('camera');
+    const fogDisabled = params.get('fog') === '0';
+    const aoOff = params.get('ao') === 'off';
+    const aoDebug = params.get('ao') === 'raw';
+    // 既定は壁の当たり判定なし（建物の中にも入れる）。?walls=1 で有効
+    const walls = params.get('walls') === '1';
+    const debug = params.get('debug') === '1';
+    const radiusOverride = parseFloat(params.get('radius'));
+    if (Number.isFinite(radiusOverride) && radiusOverride > 0) {
+      CONFIG.collisionRadius = radiusOverride;
+    }
+
+    // ===== 描画の準備 =====
+    const canvas = document.getElementById('canvas');
+    const renderer = new THREE.WebGLRenderer({
+      canvas, antialias: true, powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = CONFIG.toneMappingExposure;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xb8c4cc);
+    if (!fogDisabled) scene.fog = new THREE.Fog(0xb8c4cc, 80, 400);
+
+    const camera = new THREE.PerspectiveCamera(
+      CONFIG.fov, window.innerWidth / window.innerHeight,
+      CONFIG.nearPlane, CONFIG.farPlane
+    );
+    camera.position.set(0, CONFIG.eyeHeight, 5);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x6b5d4f, CONFIG.hemiIntensity);
+    scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffeacc, CONFIG.sunIntensity);
+    sun.position.set(...CONFIG.sunPosition);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
+    sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+
+    let composer = null;
+    if (!aoOff) {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const gtaoPass = new GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
+      gtaoPass.output = aoDebug ? GTAOPass.OUTPUT.Denoise : GTAOPass.OUTPUT.Default;
+      gtaoPass.updateGtaoMaterial({
+        radius: CONFIG.gtao.radius,
+        distanceExponent: CONFIG.gtao.distanceExponent,
+        thickness: CONFIG.gtao.thickness,
+        scale: CONFIG.gtao.scale,
+        samples: CONFIG.gtao.samples,
+      });
+      composer.addPass(gtaoPass);
+      composer.addPass(new OutputPass());
+    }
+
+    // ===== 空 =====
+    function setupProceduralSky() {
+      const skyMesh = new Sky();
+      skyMesh.scale.setScalar(450000);
+      scene.add(skyMesh);
+      const u = skyMesh.material.uniforms;
+      u['turbidity'].value = CONFIG.skyShaderTurbidity;
+      u['rayleigh'].value = CONFIG.skyShaderRayleigh;
+      u['mieCoefficient'].value = 0.005;
+      u['mieDirectionalG'].value = 0.7;
+      const sunVec = new THREE.Vector3();
+      const phi = THREE.MathUtils.degToRad(90 - CONFIG.skyShaderSunElevation);
+      const theta = THREE.MathUtils.degToRad(CONFIG.skyShaderSunAzimuth);
+      sunVec.setFromSphericalCoords(1, phi, theta);
+      u['sunPosition'].value.copy(sunVec);
+      scene.background = null;
+    }
+    function setupJpgSky(texture) {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      scene.background = texture;
+      scene.environment = texture;
+    }
+    function loadSky() {
+      return new Promise((resolve) => {
+        new THREE.TextureLoader().load(CONFIG.skyJpgPath,
+          (texture) => { setupJpgSky(texture); resolve(); },
+          undefined,
+          () => { console.warn('[viewer] sky.jpg が読めないため計算による空を使用'); setupProceduralSky(); resolve(); }
+        );
+      });
+    }
+
+    // ===== 当たり判定 =====
+    const WALKABLE = [];
+    const AABB = [];
+    function markWalkable(mesh) { WALKABLE.push(mesh); }
+    function markBlocking(mesh) {
+      if (!walls) return;
+      mesh.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(mesh);
+      AABB.push({ min: box.min.clone(), max: box.max.clone() });
+    }
+    function markBoth(mesh) { markWalkable(mesh); markBlocking(mesh); }
+
+    function isBlocked(newX, newZ, footY, curX, curZ) {
+      if (!walls) return false;
+      const r = CONFIG.collisionRadius;
+      const headY = footY + CONFIG.eyeHeight + 0.5;
+      for (const c of AABB) {
+        if (footY >= c.max.y - CONFIG.stepUpMax) continue;
+        if (c.min.y > headY) continue;
+        if (curX > c.min.x - r && curX < c.max.x + r &&
+            curZ > c.min.z - r && curZ < c.max.z + r) continue;
+        if (newX > c.min.x - r && newX < c.max.x + r &&
+            newZ > c.min.z - r && newZ < c.max.z + r) return true;
+      }
+      return false;
+    }
+
+    const _down = new THREE.Vector3(0, -1, 0);
+    const _ray = new THREE.Raycaster();
+    const _origin = new THREE.Vector3();
+    const _n = new THREE.Vector3();
+    function firstWalkableHit(fromY, x, z, far) {
+      _origin.set(x, fromY, z);
+      _ray.set(_origin, _down);
+      _ray.far = far;
+      const hits = _ray.intersectObjects(WALKABLE, false);
+      for (const h of hits) {
+        if (!h.face) continue;
+        _n.copy(h.face.normal).transformDirection(h.object.matrixWorld);
+        if (_n.y < CONFIG.slopeCosMin) continue;
+        return h.point.y;
+      }
+      return null;
+    }
+    const findGround = (x, z, footY) => firstWalkableHit(footY + CONFIG.stepUpMax + 0.05, x, z, 1000);
+    const findGroundAt = (x, z) => firstWalkableHit(1000, x, z, 2000);
+
+    function classifyMesh(obj) {
+      const name = (obj.name || '').toLowerCase();
+      if (/_walk|_floor|_stair|_ramp|_ground/.test(name)) {
+        markWalkable(obj);
+      } else if (/_wall|_obstacle/.test(name)) {
+        markBoth(obj);
+      } else {
+        const box = new THREE.Box3().setFromObject(obj);
+        const h = box.max.y - box.min.y;
+        if (h > CONFIG.stepUpMax + 0.1) markBoth(obj);
+        else markWalkable(obj);
+      }
+    }
+
+    // ===== GLBの読み込み =====
+    let cameraMarker = null;
+    const cameraMarkers = new Map();
+    const billboardTexts = [];
+    const _bbWorldPos = new THREE.Vector3();
+    let spawnPoint = null;
+    const anchors = [];   // 解説の中心（GLB内の文字オブジェクト）
+
+    const normKey = (s) => String(s ?? '').normalize('NFKC').trim().toLowerCase();
+
+    function processGltfRoot(root) {
+      root.updateMatrixWorld(true);
+      root.traverse(obj => {
+        const nameOrig = obj.userData.name || obj.name || '';
+        const name = nameOrig.toLowerCase();
+
+        if (name.startsWith('text_')) {
+          billboardTexts.push(obj);
+        }
+        if (name === 'camera' || name.startsWith('camera_')) {
+          const pos = new THREE.Vector3();
+          obj.getWorldPosition(pos);
+          cameraMarkers.set(name, pos);
+          if (!cameraMarker || name === 'camera') cameraMarker = pos;
+          obj.visible = false;
+          return;
+        }
+        if (name === 'spawn' || name.startsWith('spawn_')) {
+          spawnPoint = new THREE.Vector3();
+          obj.getWorldPosition(spawnPoint);
+          obj.visible = false;
+          return;
+        }
+
+        // 文字オブジェクト（Text_xxx）と、旧方式の目印（trigger_xxx）を解説の中心として登録
+        const m = /^(text|trigger)_(.+)$/i.exec(nameOrig);
+        if (m && !obj.userData._anchorChild) {
+          const center = new THREE.Vector3();
+          const box = new THREE.Box3().setFromObject(obj);
+          if (box.isEmpty()) obj.getWorldPosition(center); else box.getCenter(center);
+          const labels = [obj.userData.label, TEXT_LABELS[nameOrig], m[2], nameOrig]
+            .filter(Boolean).map(normKey);
+          anchors.push({ node: nameOrig, center, labels: [...new Set(labels)] });
+          if (m[1].toLowerCase() === 'trigger') obj.visible = false;
+          // 文字は当たり判定に含めない
+          obj.traverse(o => { o.userData._anchorChild = true; });
+          return;
+        }
+
+        if (obj.isMesh && !obj.userData._anchorChild) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+          classifyMesh(obj);
+        }
+      });
+      if (debug) {
+        console.log('[viewer] walkable:', WALKABLE.length, 'aabb:', AABB.length,
+          'anchors:', anchors.map(a => `${a.node}[${a.labels.join('/')}] @ ${a.center.toArray().map(n => n.toFixed(2))}`));
+      }
+    }
+
+    const loadingEl = document.getElementById('loading');
+    const loadingLabel = document.getElementById('loading-label');
+    const loadingBar = document.getElementById('loading-bar');
+    const startBtn = document.getElementById('start-btn');
+    const startLabel = document.getElementById('start-label');
+
+    function loadModel(url) {
+      return new Promise((resolve, reject) => {
+        const gltfLoader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        gltfLoader.setDRACOLoader(dracoLoader);
+        gltfLoader.load(url,
+          (gltf) => {
+            processGltfRoot(gltf.scene);
+            scene.add(gltf.scene);
+            dracoLoader.dispose();
+            resolve();
+          },
+          (xhr) => {
+            if (xhr.lengthComputable && xhr.total > 0) {
+              const pct = Math.min(100, (xhr.loaded / xhr.total) * 100);
+              loadingBar.style.width = pct.toFixed(0) + '%';
+              loadingLabel.textContent = `3Dデータを読み込んでいます　${pct.toFixed(0)}%`;
+            }
+          },
+          (err) => { dracoLoader.dispose(); reject(err); }
+        );
+      });
+    }
+
+    // ===== 解説ファイル（kaisetsu.txt） =====
+    // 1行に「建物名,距離(m),解説」。解説中の \n は改行。#で始まる行と空行は無視。
+    async function loadKaisetsu() {
+      let res;
+      try { res = await fetch(KAISETSU_URL, { cache: 'no-cache' }); }
+      catch (e) { console.warn('[kaisetsu] 読み込み失敗', e); return []; }
+      if (!res.ok) { console.warn('[kaisetsu] 見つかりません:', res.status); return []; }
+      const buf = await res.arrayBuffer();
+      let text;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+      catch (_) { text = new TextDecoder('shift_jis').decode(buf); }   // Excel等でShift_JIS保存された場合
+      return parseKaisetsu(text);
+    }
+    function parseKaisetsu(text) {
+      const byKey = new Map();
+      const lines = text.replace(/^﻿/, '').split(/\r\n|\r|\n/);
+      lines.forEach((raw, i) => {
+        const line = raw.trim();
+        if (!line || line.startsWith('#')) return;
+        const mm = /^([^,，\t]+)[,，\t]\s*([0-9０-９.．]+)\s*(?:m|ｍ)?\s*[,，\t](.*)$/i.exec(line);
+        if (!mm) {
+          if (!/^建物名/.test(line)) console.warn(`[kaisetsu] ${i + 1}行目を読めません:`, line);
+          return;
+        }
+        const name = mm[1].trim();
+        const radius = parseFloat(mm[2].normalize('NFKC'));
+        let body = mm[3].trim();
+        if (/^".*"$/s.test(body)) body = body.slice(1, -1).replace(/""/g, '"');   // CSVの引用符
+        body = body.replace(/\\n/g, '\n');
+        if (!(radius > 0)) { console.warn(`[kaisetsu] ${i + 1}行目の距離が不正:`, line); return; }
+        const key = normKey(name);
+        if (byKey.has(key)) byKey.get(key).body += '\n\n' + body;   // 同じ建物名は段落として続ける
+        else byKey.set(key, { key, name, radius, body });
+      });
+      return [...byKey.values()];
+    }
+
+    const zones = [];
+    function buildZones(entries) {
+      for (const e of entries) {
+        const a = anchors.find(a => a.labels.includes(e.key));
+        if (!a) {
+          console.warn(`[kaisetsu] 「${e.name}」に当たる文字がGLB内にありません。候補:`,
+            anchors.map(a => a.labels[0]).join('、'));
+          continue;
+        }
+        zones.push({ name: e.name, body: e.body, radius: e.radius, center: a.center,
+                     inside: false, dismissed: false, dist: Infinity });
+      }
+    }
+
+    const panel = document.getElementById('kaisetsu');
+    const panelTitle = document.getElementById('kaisetsu-title');
+    const panelBody = document.getElementById('kaisetsu-body');
+    let activeZone = null;
+
+    function showPanel(z) {
+      panelTitle.textContent = z.name;
+      panelBody.textContent = z.body;
+      panelBody.scrollTop = 0;
+      panel.classList.add('visible');
+      hintEl.classList.add('faded');
+      // 長文で枠からあふれる時だけ指でスクロールできるようにする（それ以外は下の画面の長押し移動を妨げない）
+      panel.classList.toggle('scrollable', panelBody.scrollHeight > panelBody.clientHeight + 1);
+    }
+    function hidePanel() { panel.classList.remove('visible', 'scrollable'); }
+
+    function updateKaisetsu(pos) {
+      let best = null;
+      for (const z of zones) {
+        z.dist = Math.hypot(pos.x - z.center.x, pos.z - z.center.z);   // 水平距離
+        if (!z.inside && z.dist < z.radius) {
+          z.inside = true; z.dismissed = false;          // 範囲に入った
+        } else if (z.inside && z.dist > z.radius + KAISETSU_EXIT_MARGIN) {
+          z.inside = false; z.dismissed = false;         // 範囲から出た → 次に入れば再表示
+        }
+        if (z.inside && !z.dismissed && (!best || z.dist < best.dist)) best = z;
+      }
+      if (best !== activeZone) {
+        activeZone = best;
+        if (best) showPanel(best); else hidePanel();
+      }
+    }
+    document.getElementById('kaisetsu-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeZone) activeZone.dismissed = true;      // 範囲を出るまで再表示しない
+      activeZone = null;
+      hidePanel();
+    });
+
+    // ===== 端末の向き =====
+    const deviceState = {
+      alpha: null, beta: null, gamma: null,
+      screenOrient: 0, enabled: false,
+      compassHeading: null, yawOffset: 0,
+    };
+    const _zee = new THREE.Vector3(0, 0, 1);
+    const _yAxis = new THREE.Vector3(0, 1, 0);
+    const _euler = new THREE.Euler();
+    const _q0 = new THREE.Quaternion();
+    const _q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+    const _yawQ = new THREE.Quaternion();
+    function setCameraQuaternion(alpha, beta, gamma, orient) {
+      _euler.set(beta, alpha, -gamma, 'YXZ');
+      camera.quaternion.setFromEuler(_euler);
+      camera.quaternion.multiply(_q1);
+      camera.quaternion.multiply(_q0.setFromAxisAngle(_zee, -orient));
+      if (deviceState.yawOffset !== 0) {
+        camera.quaternion.premultiply(_yawQ.setFromAxisAngle(_yAxis, deviceState.yawOffset));
+      }
+    }
+    function onDeviceOrientation(e) {
+      if (e.alpha === null) return;
+      deviceState.alpha = THREE.MathUtils.degToRad(e.alpha);
+      deviceState.beta  = THREE.MathUtils.degToRad(e.beta);
+      deviceState.gamma = THREE.MathUtils.degToRad(e.gamma);
+      if (e.webkitCompassHeading !== undefined && !isNaN(e.webkitCompassHeading)) {
+        deviceState.compassHeading = e.webkitCompassHeading;
+      }
+    }
+    function onScreenOrientation() {
+      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      deviceState.screenOrient = THREE.MathUtils.degToRad(angle);
+    }
+    onScreenOrientation();
+    window.addEventListener('orientationchange', onScreenOrientation);
+    async function requestMotionPermission() {
+      try {
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const r = await DeviceOrientationEvent.requestPermission();
+          if (r !== 'granted') { console.warn('motion permission not granted'); return false; }
+        }
+        const evtName = ('ondeviceorientationabsolute' in window)
+          ? 'deviceorientationabsolute' : 'deviceorientation';
+        window.addEventListener(evtName, onDeviceOrientation, true);
+        deviceState.enabled = true;
+        return true;
+      } catch (err) { console.error(err); return false; }
+    }
+
+    // ===== 操作 =====
+    const input = {
+      kbd: { w: false, a: false, s: false, d: false },
+      mouseDrag: { yaw: 0, pitch: 0 },                 // ジャイロがない時の向き
+      joy: { id: null, x: 0, y: 0, mag: 0 },           // ジョイスティック（-1〜1、画面下向きが+y）
+    };
+    const JOY_DEADZONE = 0.12;   // 中心付近の遊び
+    const hintEl = document.getElementById('move-hint');
+    const fadeHint = () => hintEl.classList.add('faded');
+
+    const KEYMAP = { w: 'w', ArrowUp: 'w', a: 'a', ArrowLeft: 'a', s: 's', ArrowDown: 's', d: 'd', ArrowRight: 'd' };
+    window.addEventListener('keydown', (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) { input.kbd[k] = true; if (started) fadeHint(); } });
+    window.addEventListener('keyup',   (e) => { const k = KEYMAP[e.key] || KEYMAP[e.key?.toLowerCase()]; if (k) input.kbd[k] = false; });
+
+    // 画面のドラッグで見回し（マウス・指とも。ジャイロ使用中は左右の向きだけ足す）
+    const look = { id: null, lastX: 0, lastY: 0 };
+    canvas.addEventListener('pointerdown', (e) => {
+      if (look.id !== null) return;
+      look.id = e.pointerId; look.lastX = e.clientX; look.lastY = e.clientY;
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== look.id) return;
+      const dx = e.clientX - look.lastX, dy = e.clientY - look.lastY;
+      look.lastX = e.clientX; look.lastY = e.clientY;
+      if (deviceState.enabled && deviceState.alpha !== null) {
+        deviceState.yawOffset -= dx * 0.003;
+      } else {
+        input.mouseDrag.yaw -= dx * 0.003;
+        input.mouseDrag.pitch = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, input.mouseDrag.pitch - dy * 0.003));
+      }
+    });
+    const lookEnd = (e) => { if (e.pointerId === look.id) look.id = null; };
+    canvas.addEventListener('pointerup', lookEnd);
+    canvas.addEventListener('pointercancel', lookEnd);
+
+    // ジョイスティック：つまみを動かした方向へ、動かした量に応じた速さで歩く
+    const joyBase = document.getElementById('joystick');
+    const joyKnob = document.getElementById('joystick-knob');
+    function joyMove(e) {
+      const r = joyBase.getBoundingClientRect();
+      const maxR = (r.width - joyKnob.offsetWidth) / 2;
+      let dx = e.clientX - (r.left + r.width / 2);
+      let dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy);
+      if (d > maxR) { dx *= maxR / d; dy *= maxR / d; }
+      joyKnob.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+      input.joy.x = dx / maxR; input.joy.y = dy / maxR; input.joy.mag = Math.min(1, d / maxR);
+    }
+    function joyEnd(e) {
+      if (e.pointerId !== input.joy.id) return;
+      input.joy.id = null; input.joy.x = input.joy.y = input.joy.mag = 0;
+      joyKnob.style.transform = '';
+      joyBase.classList.remove('active');
+    }
+    joyBase.addEventListener('pointerdown', (e) => {
+      if (input.joy.id !== null) return;
+      input.joy.id = e.pointerId;
+      try { joyBase.setPointerCapture(e.pointerId); } catch (_) {}
+      joyBase.classList.add('active');
+      joyMove(e); fadeHint();
+      e.preventDefault();
+    });
+    joyBase.addEventListener('pointermove', (e) => { if (e.pointerId === input.joy.id) joyMove(e); });
+    joyBase.addEventListener('pointerup', joyEnd);
+    joyBase.addEventListener('pointercancel', joyEnd);
+    joyBase.addEventListener('lostpointercapture', joyEnd);
+
+    // ===== 毎フレームの処理 =====
+    const clock = new THREE.Clock();
+    const statsEl = document.getElementById('stats');
+    let frameCount = 0;
+    let started = false;
+    const _mouseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    const _fwd = new THREE.Vector3(), _rgt = new THREE.Vector3(), _move = new THREE.Vector3();
+    const initialCameraPos = new THREE.Vector3(0, CONFIG.eyeHeight, 5);
+
+    function tick() {
+      const dt = Math.min(clock.getDelta(), 0.1);
+      if (deviceState.enabled && deviceState.alpha !== null) {
+        setCameraQuaternion(deviceState.alpha, deviceState.beta, deviceState.gamma, deviceState.screenOrient);
+      } else {
+        _mouseEuler.set(input.mouseDrag.pitch, input.mouseDrag.yaw, 0, 'YXZ');
+        camera.quaternion.setFromEuler(_mouseEuler);
+      }
+      _move.set(0, 0, 0);
+      _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion); _fwd.y = 0; _fwd.normalize();
+      _rgt.set(1, 0, 0).applyQuaternion(camera.quaternion);  _rgt.y = 0; _rgt.normalize();
+      if (input.kbd.w) _move.add(_fwd);
+      if (input.kbd.s) _move.sub(_fwd);
+      if (input.kbd.d) _move.add(_rgt);
+      if (input.kbd.a) _move.sub(_rgt);
+      let speed = _move.lengthSq() > 0 ? 1 : 0;
+      const joy = input.joy;
+      if (joy.mag > JOY_DEADZONE) {
+        _move.addScaledVector(_fwd, -joy.y).addScaledVector(_rgt, joy.x);   // 上＝前進、左右＝横歩き
+        speed = Math.max(speed, Math.min(1, (joy.mag - JOY_DEADZONE) / (1 - JOY_DEADZONE)));
+      }
+      const footY = camera.position.y - CONFIG.eyeHeight;
+
+      if (speed > 0 && _move.lengthSq() > 1e-8) {
+        _move.normalize().multiplyScalar(CONFIG.walkSpeed * speed * dt);
+        const curX = camera.position.x;
+        const curZ = camera.position.z;
+        const newX = curX + _move.x;
+        if (!isBlocked(newX, curZ, footY, curX, curZ)) camera.position.x = newX;
+        const newZ = curZ + _move.z;
+        if (!isBlocked(camera.position.x, newZ, footY, camera.position.x, curZ)) camera.position.z = newZ;
+      }
+
+      const groundY = findGround(camera.position.x, camera.position.z, camera.position.y - CONFIG.eyeHeight);
+      if (groundY !== null) {
+        const dy = groundY + CONFIG.eyeHeight - camera.position.y;
+        camera.position.y += Math.max(-CONFIG.fallSpeed * dt, Math.min(CONFIG.climbSpeed * dt, dy));
+      }
+      if (camera.position.y < -100) camera.position.copy(initialCameraPos);
+
+      // text_* オブジェクトを常にカメラ方向へ水平ビルボード回転
+      for (const tObj of billboardTexts) {
+        tObj.getWorldPosition(_bbWorldPos);
+        tObj.lookAt(camera.position.x, _bbWorldPos.y, camera.position.z);
+      }
+      updateKaisetsu(camera.position);
+
+      if (debug && (frameCount++ % 10) === 0) {
+        const p = camera.position;
+        const heading = deviceState.compassHeading !== null ? deviceState.compassHeading.toFixed(0) + '°' : '--';
+        const near = zones.slice().sort((a, b) => a.dist - b.dist)[0];
+        statsEl.textContent = `XZ ${p.x.toFixed(1)}, ${p.z.toFixed(1)}\nEYE Y ${p.y.toFixed(2)}\nN ${heading}` +
+          (near ? `\n${near.name} ${near.dist.toFixed(1)}m / ${near.radius}m` : '');
+      }
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+
+    function applySpawnPoint() {
+      if (spawnOverride) {
+        const parts = spawnOverride.split(',').map(Number);
+        if (parts.length === 3 && parts.every(Number.isFinite)) {
+          initialCameraPos.set(parts[0], parts[1] + CONFIG.eyeHeight, parts[2]);
+        }
+      } else if (cameraParam && cameraMarkers.has(cameraParam.toLowerCase())) {
+        const targetCam = cameraMarkers.get(cameraParam.toLowerCase());
+        const groundY = findGroundAt(targetCam.x, targetCam.z);
+        const y = (groundY !== null) ? (groundY + CONFIG.eyeHeight) : targetCam.y;
+        initialCameraPos.set(targetCam.x, y, targetCam.z);
+      } else if (cameraMarker) {
+        const groundY = findGroundAt(cameraMarker.x, cameraMarker.z);
+        const y = (groundY !== null) ? (groundY + CONFIG.eyeHeight) : cameraMarker.y;
+        initialCameraPos.set(cameraMarker.x, y, cameraMarker.z);
+      } else if (spawnPoint) {
+        initialCameraPos.set(spawnPoint.x, spawnPoint.y + CONFIG.eyeHeight, spawnPoint.z);
+      }
+      camera.position.copy(initialCameraPos);
+    }
+
+    // ===== 読み込み開始（ページを開いた時点で先に読み始める） =====
+    const ready = Promise.all([loadModel(modelUrl), loadKaisetsu(), loadSky()])
+      .then(([, entries]) => {
+        buildZones(entries);
+        applySpawnPoint();
+        try { renderer.compile(scene, camera); } catch (_) {}   // 開始直後のカクつきを減らす
+        loadingBar.style.width = '100%';
+        loadingLabel.textContent = 'まもなく開始します…';
+        loadingEl.classList.add('done');
+        if (!started) {
+          started = true;
+          const start = document.getElementById('start');
+          start.classList.add('leaving');
+          setTimeout(() => start.classList.add('hidden'), 350);
+          document.getElementById('hud').classList.remove('hidden');
+          if (debug) statsEl.classList.remove('hidden');
+          clock.getDelta();
+          tick();
+        }
+      });
+    ready.catch((err) => {
+      console.error('[viewer] 読み込み失敗:', err);
+      loadingLabel.innerHTML = '<span class="err">3Dデータを読み込めませんでした。<br>ページを再読み込みしてください。</span>';
+      loadingEl.classList.add('done');
+      startBtn.disabled = true;
+      startLabel.textContent = 'スタート';
+    });
+
+    const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    hintEl.textContent = isTouch
+      ? '中の円を動かすと歩けます'
+      : '円のドラッグかW・A・S・Dキーで移動／画面のドラッグで見回し';
+
+    // ===== スタート =====
+    startBtn.addEventListener('click', async () => {
+      if (started) return;
+      started = true;
+      // どちらもボタンを押した直後に呼ぶ必要がある（iOSの許可ダイアログ／Androidの全画面）
+      const permission = requestMotionPermission();
+      try {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) { const p = req.call(el); if (p && p.catch) p.catch(() => {}); }
+      } catch (_) {}
+      startBtn.disabled = true;
+      startLabel.textContent = '読み込み中…';
+      await permission;
+      try { await ready; } catch (_) { return; }
+      const start = document.getElementById('start');
+      start.classList.add('leaving');
+      setTimeout(() => start.classList.add('hidden'), 450);
+      document.getElementById('hud').classList.remove('hidden');
+      if (debug) statsEl.classList.remove('hidden');
+      clock.getDelta();
+      tick();
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      if (deviceState.enabled && deviceState.alpha !== null) {
+        const cur = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+        deviceState.yawOffset -= cur.y;
+      } else {
+        input.mouseDrag.yaw = 0; input.mouseDrag.pitch = 0;
+      }
+      camera.position.copy(initialCameraPos);
+    });
+
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      if (composer) composer.setSize(w, h);
+      if (activeZone) panel.classList.toggle('scrollable', panelBody.scrollHeight > panelBody.clientHeight + 1);
+    });
+
+    if (debug) window.__viewer = { camera, zones, anchors, input };
+  </script>
+</body>
+</html>

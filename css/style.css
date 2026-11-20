@@ -1,0 +1,1466 @@
+/* ==========================================================================
+   XR正道官衙遺跡 — 完全素材化ベーススタイルシート
+   ※背景・バナー・アイコン・ピン・枠はすべて ./assets/images/ の画像素材を使用。
+   　素材ファイルを上書きするだけでデザイン全体が差し替わる構造です。
+   ========================================================================== */
+
+:root {
+  --ink: #1f2430;
+  --ink-muted: #5a5e6b;
+  --surface: #faf8f2;
+  --surface-card: rgba(255, 253, 248, 0.94);
+  --accent: #22345e;
+  --accent-red: #9f3328;
+  --accent-gold: #b89242;
+  --border-subtle: rgba(34, 52, 94, 0.18);
+  --nav-height: 68px;
+  --header-height: 58px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  color: var(--ink);
+  background: #182238;
+}
+
+.serif {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+}
+
+/* モバイルアプリ枠（PC閲覧時は中央スマートフォン幅で表示） */
+#app-shell {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+}
+
+/* スプラッシュ画面 */
+#splash-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+#splash-screen.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-logo-img {
+  width: 72%;
+  max-width: 300px;
+  height: auto;
+  object-fit: contain;
+}
+
+.splash-gunji {
+  height: 220px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ビュー共通 */
+.view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.view.is-active {
+  display: flex;
+}
+
+.view-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 28px;
+}
+
+/* サブページ共通ヘッダー（素材画像ベース） */
+.sub-header {
+  height: var(--header-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background-image: url("../assets/images/bg/bg_header_bar.png");
+  background-size: cover;
+  background-position: center;
+  color: #ffffff;
+  position: relative;
+}
+
+.sub-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.subpage-bg {
+  background-image: url("../assets/images/bg/bg_subpage_washi.png");
+  background-size: cover;
+  background-position: center;
+}
+
+/* ==========================================================================
+   1. ホーム画面（XR藤原宮とは異なる、キャラ主役＋縦ワイドバナー構成）
+   ========================================================================== */
+#view-home {
+  background-size: cover;
+  background-position: center;
+}
+
+.home-top-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 10px 4px;
+  gap: 6px;
+}
+
+.home-top-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.home-top-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-top-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.home-ecomu-img {
+  height: 40px;
+  width: auto;
+  max-width: 106px;
+  object-fit: contain;
+  display: block;
+}
+
+.home-logo-img {
+  height: 40px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+  display: block;
+}
+
+/* 郡司顔画像＋吹き出しヒーロー（和モダン・ミュージアム調タイポグラフィ） */
+.home-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 16px;
+  min-height: 176px;
+  gap: 14px;
+}
+
+.home-hero-char {
+  width: 104px;
+  flex-shrink: 0;
+}
+
+.home-hero-char img {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 252, 245, 0.85);
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.home-speech-wrap {
+  position: relative;
+  flex: 1;
+  background: rgba(252, 250, 245, 0.96);
+  border-radius: 12px;
+  padding: 14px 18px 11px;
+  min-height: 148px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.home-speech-wrap::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: rgba(252, 250, 245, 0.96);
+  border-radius: 2px;
+}
+
+.home-speech-head {
+  display: flex;
+  align-items: center;
+  padding-bottom: 7px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid rgba(20, 24, 34, 0.1);
+}
+
+.home-speech-name {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #4a4e59;
+}
+
+.home-speech-text {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-size: 13.8px;
+  font-weight: 500;
+  line-height: 1.82;
+  letter-spacing: 0.04em;
+  font-feature-settings: "palt" 1;
+  line-break: strict;
+  word-break: normal;
+  margin: 0;
+  color: #14161b;
+  flex: 1;
+}
+
+.home-speech-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.home-speech-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.speech-nav-btn {
+  width: 30px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #14161b;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease;
+}
+
+.speech-nav-btn:active {
+  opacity: 0.5;
+}
+
+.speech-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.home-speech-pager {
+  font-family: "Shippori Mincho", Georgia, serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #555966;
+  min-width: 38px;
+  text-align: center;
+}
+
+.otanoshimi-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.otanoshimi-stamp-overlay {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 10px;
+  z-index: 3;
+  background: rgba(255, 253, 248, 0.94);
+  border: 1.5px solid var(--accent-red);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-red);
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.otanoshimi-stamp-overlay.is-unlocked {
+  border-color: #2e7a4a;
+  color: #2e7a4a;
+}
+
+/* ホームメニュー（2x2 正方形SVGバナーグリッド） */
+.home-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 14px 14px;
+}
+
+.home-menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.square-banner {
+  aspect-ratio: 1 / 1;
+}
+
+.square-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.square-banner.is-locked,
+.square-banner:disabled {
+  opacity: 0.72;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.banner-btn {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: block;
+  transition: transform 0.14s ease;
+}
+
+.banner-btn:active {
+  transform: scale(0.98);
+}
+
+.banner-btn img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+}
+
+.home-menu-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.home-progress-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 253, 248, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+.home-progress-count {
+  font-weight: 700;
+  color: var(--accent-red);
+}
+
+/* ==========================================================================
+   2. 現地マップ画面（上部レイヤーバー＋右側ツールレール＋下部スライドシート）
+   ========================================================================== */
+#view-map {
+  position: absolute;
+}
+
+#leaflet-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* 上部フローティング・レイヤー切替バー */
+.map-top-layers {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 400;
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 253, 248, 0.94);
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.layer-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink-muted);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.layer-toggle-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.layer-toggle-btn.is-on {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+/* 右側フローティング・ツールレール */
+.map-right-rail {
+  position: absolute;
+  top: 72px;
+  right: 12px;
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-tool-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 253, 248, 0.95);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-tool-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.map-status-pill {
+  position: absolute;
+  top: 72px;
+  left: 12px;
+  z-index: 400;
+  background: rgba(24, 34, 56, 0.86);
+  color: #ffffff;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* マップ下部スライドアップ・スポットカード */
+.map-spot-sheet {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  z-index: 450;
+  background: var(--surface-card);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  transform: translateY(130%);
+  transition: transform 0.24s ease;
+}
+
+.map-spot-sheet.is-open {
+  transform: translateY(0);
+}
+
+.spot-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.spot-sheet-char {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spot-sheet-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.spot-sheet-meta {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin: 2px 0 0;
+}
+
+.spot-sheet-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.spot-sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   3. 3Dモデル鑑賞画面（上部セグメントタブ切替：復元建物 / 出土遺物）
+   ========================================================================== */
+.segment-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 4px;
+  flex-shrink: 0;
+}
+
+.segment-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: 1.5px solid var(--accent);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.segment-btn.is-active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.model-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0;
+}
+
+.model-card-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: #eae6dc;
+}
+
+.model-card-body {
+  padding: 10px;
+}
+
+.model-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--ink);
+}
+
+.model-card-sub {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.badge-done {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #2e7a4a;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   4. 解説・ご褒美・設定・メニュー画面
+   ========================================================================== */
+.info-hero-img {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.info-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.info-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.info-card p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+.info-card p:last-child {
+  margin-bottom: 0;
+}
+
+.reward-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.reward-card-img {
+  width: 70%;
+  max-width: 260px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.theme-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.theme-swatch-btn {
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 4px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.theme-swatch-btn.is-active {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(184, 146, 66, 0.35);
+}
+
+.theme-swatch-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: block;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* 汎用ボタン */
+.primary-btn {
+  flex: 1;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.primary-btn.accent-red {
+  background: var(--accent-red);
+}
+
+.secondary-btn {
+  padding: 11px 14px;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid var(--accent-red);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--accent-red);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+/* ==========================================================================
+   5. 常設ボトムタブナビゲーション（素材アイコン使用）
+   ========================================================================== */
+.bottom-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: #ffffff;
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 500;
+}
+
+.nav-tab {
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.nav-tab img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.nav-tab.is-active {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   6. モーダル（3D/ARビューワー、Sketchfab、発掘、おまけAR、ヘルプ、警告）
+   ========================================================================== */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 800;
+  background: rgba(16, 20, 30, 0.78);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+.modal-card {
+  width: 100%;
+  max-height: 88%;
+  background: var(--surface);
+  border: 2px solid var(--accent-gold);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* model-viewer コンテナ */
+model-viewer {
+  width: 100%;
+  height: 310px;
+  background: #ece8de;
+  border-radius: 10px;
+  display: block;
+}
+
+.ar-launch-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-red);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.ar-launch-btn img {
+  width: 18px;
+  height: 18px;
+}
+
+/* Sketchfab 埋め込み枠 */
+.sketchfab-box {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #111111;
+}
+
+.sketchfab-box iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.sketchfab-credit {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin: 8px 0 12px;
+}
+
+.sketchfab-credit a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 発掘キャンバス */
+.dig-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #3e3026;
+  touch-action: none;
+}
+
+.dig-artifact-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#dig-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+/* おまけARカメラ全画面モーダル */
+.camera-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 850;
+  background: #0d1016;
+  display: none;
+  flex-direction: column;
+}
+
+.camera-modal.is-open {
+  display: flex;
+}
+
+#ar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-hud-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.camera-guide-msg {
+  position: relative;
+  z-index: 2;
+  margin: 12px auto 0;
+  padding: 8px 14px;
+  background: rgba(16, 20, 30, 0.72);
+  color: #ffffff;
+  font-size: 13px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.camera-frame-box {
+  position: relative;
+  z-index: 2;
+  width: 240px;
+  height: 240px;
+  margin: auto;
+  border: 2px dashed rgba(255, 255, 255, 0.82);
+  border-radius: 12px;
+}
+
+.camera-hud-bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 32px;
+}
+
+.shutter-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: rgba(24, 34, 56, 0.65);
+  padding: 14px;
+  cursor: pointer;
+}
+
+.shutter-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.help-slide-img {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.help-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.help-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #c8c5bc;
+}
+
+.help-dot.is-active {
+  background: var(--accent);
+}
+
+/* 正道官衙遺跡とは — 解説記事・全幅図版 */
+.about-subhead {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-red);
+  border-left: 3px solid var(--accent-gold);
+  padding-left: 8px;
+}
+
+.about-figure {
+  margin: 12px 0 14px;
+  padding: 0;
+  width: 100%;
+}
+
+.about-figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.about-figure figcaption {
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.cg-intro-box {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.cg-intro-box summary {
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   枠なし・黒文字統一エディトリアル & 全幅3Dビューワーページ
+   ========================================================================== */
+.about-section {
+  padding: 0 0 24px;
+  margin: 0 0 20px;
+  background: transparent;
+  border: none;
+  color: #111111;
+}
+
+.about-section h3 {
+  margin: 0 0 12px;
+  font-size: 21px;
+  font-weight: 700;
+  color: #111111;
+  line-height: 1.4;
+}
+
+.about-section .about-subhead {
+  margin: 18px 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111111;
+  border: none;
+  padding: 0;
+}
+
+.about-section p {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: #111111;
+}
+
+.about-figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0;
+  border: none;
+}
+
+.about-figure figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #111111;
+  text-align: center;
+}
+
+/* 3D一覧冒頭の復元解説も枠なし・黒文字統一 */
+.cg-intro-box {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 4px 0 14px;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #111111;
+}
+
+.cg-intro-box summary {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111111;
+  cursor: pointer;
+}
+
+/* 全幅3Dビューワーページ */
+.viewer-page-scroll {
+  padding: 0 0 28px !important;
+}
+
+.viewer-full-stage {
+  width: 100%;
+  background: #ece8de;
+}
+
+.viewer-full-stage model-viewer {
+  width: 100%;
+  height: 52vh;
+  min-height: 320px;
+  border-radius: 0;
+  display: block;
+}
+
+.viewer-full-sketchfab {
+  width: 100%;
+  height: 50vh;
+  min-height: 320px;
+  background: #111111;
+}
+
+.viewer-full-sketchfab iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.viewer-plain-body {
+  padding: 16px 18px 20px;
+  color: #111111;
+}
+
+.viewer-plain-body h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.viewer-plain-body p {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: #111111;
+}
+
+.viewer-plain-note {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #333333 !important;
+}
+
+.viewer-plain-body .sketchfab-credit {
+  font-size: 12px;
+  color: #111111;
+  margin: 0 0 14px;
+}
+
+.viewer-plain-body .sketchfab-credit a {
+  color: #111111;
+  text-decoration: underline;
+}
+
+.map-tool-btn.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   ウォークスルー AR/VR 起動ボタン & 全画面HUD
+   ========================================================================== */
+.map-wt-fab {
+  position: absolute;
+  left: 12px;
+  bottom: 24px;
+  z-index: 410;
+  padding: 11px 16px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: var(--accent-red);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.wt-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 950;
+  background: #141a26;
+  display: none;
+  overflow: hidden;
+}
+
+.wt-modal.is-open {
+  display: block;
+}
+
+.wt-ar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  z-index: 1;
+}
+
+.wt-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: none;
+}
+
+.wt-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  background: rgba(16, 20, 30, 0.82);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.wt-hud-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wt-circle-btn {
+  background: rgba(16, 20, 30, 0.72) !important;
+  border-radius: 50%;
+}
+
+.wt-top-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.wt-pill-btn {
+  padding: 7px 11px;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  background: rgba(16, 20, 30, 0.72);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wt-pill-btn.is-on {
+  background: var(--accent-red);
+  border-color: #ffffff;
+}
+
+.wt-hud-bottom {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 14px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wt-warp-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.wt-warp-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  background: rgba(16, 20, 30, 0.72);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wt-warp-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent-gold);
+}
+
+.wt-controls-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.wt-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.wt-dpad-mid {
+  display: flex;
+  gap: 4px;
+}
+
+.wt-pad-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  background: rgba(16, 20, 30, 0.68);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.wt-snap-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: rgba(159, 51, 40, 0.85);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
